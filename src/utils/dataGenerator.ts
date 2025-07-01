@@ -1,19 +1,48 @@
 import { DayData, DetectionRecord, SummaryData, TimeSlotSummary } from '../types';
+import { APP_CONFIG, DATE_FORMAT_OPTIONS } from './constants';
+import { validateDateRange } from './validation';
 
-const TIME_SLOTS = ['6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM', '3AM'];
-const ACTIVE_BEDS = [1, 2, 3, 4, 5, 6];
-const DETECTION_STATUSES: Array<'Yes' | 'No' | 'Ambiguous'> = ['Yes', 'No', 'Ambiguous'];
+// Enhanced data generation with more realistic patterns
+function generateDetectionStatus(timeSlot: string, bedId: number): 'Yes' | 'No' | 'Ambiguous' {
+  // Create more realistic patterns based on time and bed
+  const hour = parseInt(timeSlot.replace(/[^0-9]/g, ''));
+  const isAM = timeSlot.includes('AM');
+  const actualHour = isAM ? hour : (hour === 12 ? 12 : hour + 12);
+  
+  // Higher detection rates during day hours (6AM-6PM)
+  const isDayTime = actualHour >= 6 && actualHour <= 18;
+  const baseDetectionRate = isDayTime ? 0.75 : 0.6;
+  
+  // Add some variation based on bed ID
+  const bedVariation = (bedId % 3) * 0.1;
+  const finalRate = Math.min(0.95, baseDetectionRate + bedVariation);
+  
+  const random = Math.random();
+  
+  if (random < finalRate * 0.8) {
+    return 'Yes';
+  } else if (random < finalRate) {
+    return 'Ambiguous';
+  } else {
+    return 'No';
+  }
+}
 
 export function generateDummyData(startDate: Date, endDate: Date): DayData[] {
+  const validation = validateDateRange(startDate, endDate);
+  if (!validation.isValid) {
+    throw new Error(validation.error);
+  }
+
   const data: DayData[] = [];
   const currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
     const dayRecords: DetectionRecord[] = [];
     
-    TIME_SLOTS.forEach(timeSlot => {
-      ACTIVE_BEDS.forEach(bedId => {
-        const status = DETECTION_STATUSES[Math.floor(Math.random() * DETECTION_STATUSES.length)];
+    APP_CONFIG.TIME_SLOTS.forEach(timeSlot => {
+      APP_CONFIG.ACTIVE_BEDS.forEach(bedId => {
+        const status = generateDetectionStatus(timeSlot, bedId);
         const record: DetectionRecord = {
           bedId,
           timeSlot,
@@ -36,10 +65,22 @@ export function generateDummyData(startDate: Date, endDate: Date): DayData[] {
 }
 
 export function calculateSummaryData(dayData: DayData[]): SummaryData[] {
+  if (!Array.isArray(dayData) || dayData.length === 0) {
+    return [];
+  }
+
   return dayData.map(day => {
-    const totalBeds = ACTIVE_BEDS.length;
+    if (!day.records || !Array.isArray(day.records)) {
+      throw new Error('Invalid day data structure');
+    }
+
+    const totalBeds = APP_CONFIG.ACTIVE_BEDS.length;
     const totalRecords = day.records.length;
     const recordsPerBed = totalRecords / totalBeds;
+    
+    if (recordsPerBed === 0) {
+      throw new Error('No records found for the day');
+    }
     
     const detected = day.records.filter(r => r.status === 'Yes').length / recordsPerBed;
     const notDetected = day.records.filter(r => r.status === 'No').length / recordsPerBed;
@@ -59,9 +100,13 @@ export function calculateSummaryData(dayData: DayData[]): SummaryData[] {
 }
 
 export function calculateTimeSlotSummary(dayData: DayData): TimeSlotSummary[] {
-  return TIME_SLOTS.map(timeSlot => {
+  if (!dayData.records || !Array.isArray(dayData.records)) {
+    throw new Error('Invalid day data structure');
+  }
+
+  return APP_CONFIG.TIME_SLOTS.map(timeSlot => {
     const slotRecords = dayData.records.filter(r => r.timeSlot === timeSlot);
-    const totalBeds = ACTIVE_BEDS.length;
+    const totalBeds = APP_CONFIG.ACTIVE_BEDS.length;
     
     const detected = slotRecords.filter(r => r.status === 'Yes').length;
     const notDetected = slotRecords.filter(r => r.status === 'No').length;
@@ -82,12 +127,17 @@ export function calculateTimeSlotSummary(dayData: DayData): TimeSlotSummary[] {
 }
 
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      throw new Error('Invalid date string');
+    }
+    
+    return date.toLocaleDateString('en-US', DATE_FORMAT_OPTIONS.DISPLAY);
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'Invalid Date';
+  }
 }
 
 export function getDatePresetRange(preset: string): { start: Date; end: Date } {
