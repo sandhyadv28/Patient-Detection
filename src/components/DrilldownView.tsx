@@ -245,12 +245,11 @@ export default function DrilldownView() {
                           </tr>
                         </thead>
                         {isPerSlotLoading ? (
-                          <div className="flex items-center justify-center py-8">
-                            <div className="flex items-center gap-3">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                              <span className="text-gray-600">Loading bed details...</span>
-                            </div>
-                          </div>
+                          <tr>
+                            <td colSpan={3}>
+                              <LoadingSpinner size="md" message="Loading bed details..." />
+                            </td>
+                          </tr>
                         ) : (
                           <tbody className="divide-y divide-gray-200">
                             {(perSlotDetailedData && perSlotDetailedData.records.length > 0
