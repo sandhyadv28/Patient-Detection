@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { createSetState } from "../../utility";
-import { fetchPatientSummary, fetchDrilldownData, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
+import { fetchPatientSummary, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
 import { SummaryData, DayData } from "../../../components/modals";
 
 interface PatientState {
@@ -57,19 +57,6 @@ const patientSlice = createSlice({
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch patient summary";
       })
-      .addCase(fetchDrilldownData.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchDrilldownData.fulfilled, (state, action: PayloadAction<DayData[]>) => {
-        state.isLoading = false;
-        state.dayData = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchDrilldownData.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || "Failed to fetch drilldown data";
-      })
       .addCase(fetchDetailedDrilldownData.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -77,6 +64,7 @@ const patientSlice = createSlice({
       .addCase(fetchDetailedDrilldownData.fulfilled, (state, action: PayloadAction<DayData>) => {
         state.isLoading = false;
         state.detailedDayData = action.payload;
+        state.dayData = [action.payload];
         state.error = null;
       })
       .addCase(fetchDetailedDrilldownData.rejected, (state, action) => {
@@ -84,15 +72,21 @@ const patientSlice = createSlice({
         state.error = action.error.message || "Failed to fetch detailed drilldown data";
       })
       .addCase(fetchPerSlotDetailedData.pending, (state) => {
+        console.log('=== Redux: fetchPerSlotDetailedData.pending ===');
         state.isPerSlotLoading = true;
         state.error = null;
       })
       .addCase(fetchPerSlotDetailedData.fulfilled, (state, action: PayloadAction<DayData>) => {
+        console.log('=== Redux: fetchPerSlotDetailedData.fulfilled ===');
+        console.log('Received per-slot data:', action.payload);
+        console.log('Records count:', action.payload.records.length);
         state.isPerSlotLoading = false;
         state.perSlotDetailedData = action.payload;
         state.error = null;
       })
       .addCase(fetchPerSlotDetailedData.rejected, (state, action) => {
+        console.log('=== Redux: fetchPerSlotDetailedData.rejected ===');
+        console.error('Per-slot Redux error:', action.error);
         state.isPerSlotLoading = false;
         state.error = action.error.message || "Failed to fetch per-slot detailed data";
       });
@@ -100,5 +94,5 @@ const patientSlice = createSlice({
 });
 
 export const { clearError, clearDetailedData, clearPerSlotDetailedData } = patientSlice.actions;
-export { fetchPatientSummary, fetchDrilldownData, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
+export { fetchPatientSummary, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
 export default patientSlice.reducer;

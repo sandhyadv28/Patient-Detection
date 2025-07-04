@@ -29,92 +29,6 @@ interface MockiData {
   };
 }
 
-interface MockiDrilldownData {
-  status: string;
-  data: Array<{
-    slot_one?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-      per_bed: Array<{
-        detection_status: boolean;
-        imageURL: string;
-        last_updated: string;
-        bed_no: string;
-      }>;
-    };
-    slot_two?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-      per_bed: Array<{
-        detection_status: boolean;
-        imageURL: string;
-        last_updated: string;
-        bed_no: string;
-      }>;
-    };
-    slot_three?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-      per_bed: Array<{
-        detection_status: boolean;
-        imageURL: string;
-        last_updated: string;
-        bed_no: string;
-      }>;
-    };
-    slot_four?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-      per_bed: Array<{
-        detection_status: boolean;
-        imageURL: string;
-        last_updated: string;
-        bed_no: string;
-      }>;
-    };
-    slot_five?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-      per_bed: Array<{
-        detection_status: boolean;
-        imageURL: string;
-        last_updated: string;
-        bed_no: string;
-      }>;
-    };
-  }>;
-}
-
 interface DetailedDrilldownResponse {
   status: string;
   data: Array<{
@@ -292,72 +206,6 @@ export const fetchPatientSummary = createAsyncThunk(
   }
 );
 
-export const fetchDrilldownData = createAsyncThunk(
-  "patient/fetchDrilldownData",
-  async () => {
-    const response = await fetch('https://mocki.io/v1/49137919-30f3-4f6e-93e9-275a8143fcc5');
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch drilldown data');
-    }
-    
-    const data: MockiDrilldownData = await response.json();
-    console.log('Raw drilldown data:', data);
-    
-    // Transform Mocki drilldown data to match DayData interface
-    const transformedData: DayData[] = data.data.map((dayData, dayIndex) => {
-      console.log(`Processing day ${dayIndex}:`, dayData);
-      const allRecords: DetectionRecord[] = [];
-      
-      // Process each time slot with proper null checks
-      const slots = [
-        { key: 'slot_one', data: dayData.slot_one },
-        { key: 'slot_two', data: dayData.slot_two },
-        { key: 'slot_three', data: dayData.slot_three },
-        { key: 'slot_four', data: dayData.slot_four },
-        { key: 'slot_five', data: dayData.slot_five }
-      ];
-      
-      slots.forEach((slotInfo) => {
-        const slot = slotInfo.data;
-        console.log(`Processing ${slotInfo.key}:`, slot);
-        
-        // Check if slot exists and has per_bed data
-        if (slot && slot.per_bed && Array.isArray(slot.per_bed)) {
-          console.log(`${slotInfo.key} has ${slot.per_bed.length} beds`);
-          slot.per_bed.forEach(bed => {
-            if (bed && bed.bed_no && bed.imageURL) {
-              allRecords.push({
-                bedId: parseInt(bed.bed_no),
-                timeSlot: slot.label || 'Unknown Time Slot',
-                status: bed.detection_status ? 'Yes' : 'No',
-                photoUrl: bed.imageURL,
-              });
-            }
-          });
-        } else {
-          console.log(`${slotInfo.key} is empty or missing per_bed data`);
-        }
-      });
-      
-      // Create a date for this day (using current date + day index)
-      const currentDate = moment().add(dayIndex, 'days');
-      const dateString = currentDate.format('YYYY-MM-DD');
-      
-      const result = {
-        date: dateString,
-        records: allRecords,
-      };
-      
-      console.log(`Day ${dayIndex} result:`, result);
-      return result;
-    });
-    
-    console.log('Final transformed data:', transformedData);
-    return transformedData;
-  }
-);
-
 export const fetchDetailedDrilldownData = createAsyncThunk(
   "patient/fetchDetailedDrilldownData",
   async (date?: string) => {
@@ -483,6 +331,8 @@ export const fetchPerSlotDetailedData = createAsyncThunk(
         throw new Error(`API request failed with status ${response.status}: ${errorText}`);
       }
       const data: PerSlotDetailedResponse = await response.json();
+      console.log('Per-Slot API Response data:', data);
+      
       // Find the slot data for the requested slotKey
       let slotData = null;
       if (data.data && data.data.length > 0) {

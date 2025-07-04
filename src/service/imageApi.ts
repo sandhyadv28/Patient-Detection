@@ -7,7 +7,6 @@ const IMAGE_API_CONFIG = {
     'ai-api-key': 'secret',
     'hospital-name': 'Adarsha Hospital - Karimnagar',
     'hospital-unit': 'ICU',
-    'Content-Type': 'application/json',
   },
 };
 
@@ -20,7 +19,7 @@ export interface ImageApiResponse {
 /**
  * Fetch patient detection image by image key
  * @param imageKey - The image key from the detection record
- * @returns Promise with image data
+ * @returns Promise with image blob URL
  */
 export const fetchPatientImage = async (imageKey: string): Promise<string> => {
   try {
@@ -28,31 +27,49 @@ export const fetchPatientImage = async (imageKey: string): Promise<string> => {
     const url = `${IMAGE_API_CONFIG.BASE_URL}pdd/detailed/per-slot/image?image_key=${encodedImageKey}`;
     
     console.log('Fetching image from:', url);
+    console.log('Image key:', imageKey);
+    console.log('Encoded image key:', encodedImageKey);
     
     const response = await fetch(url, {
       method: 'GET',
       headers: IMAGE_API_CONFIG.HEADERS,
     });
 
+    console.log('Image API Response status:', response.status);
+    console.log('Image API Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('Image API Error response:', errorText);
       throw new Error(`Image API request failed with status ${response.status}: ${errorText}`);
     }
 
     // Check if response is an image
     const contentType = response.headers.get('content-type');
+    console.log('Content-Type:', contentType);
+    
     if (contentType && contentType.startsWith('image/')) {
-      // Return the image URL directly if it's an image response
-      return url;
+      // Response is a direct image, convert to blob URL
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      console.log('Created blob URL for image:', blobUrl);
+      return blobUrl;
     }
 
     // If it's JSON response with image data
-    const data: ImageApiResponse = await response.json();
-    if (data.success && data.data) {
-      return data.data;
-    }
+    try {
+      const data: ImageApiResponse = await response.json();
+      console.log('Image API JSON response:', data);
+      
+      if (data.success && data.data) {
+        return data.data;
+      }
 
-    throw new Error(data.error || 'Failed to fetch image data');
+      throw new Error(data.error || 'Failed to fetch image data');
+    } catch (jsonError) {
+      console.error('Failed to parse JSON response:', jsonError);
+      throw new Error('Invalid response format from image API');
+    }
   } catch (error) {
     console.error('Error fetching patient image:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -69,10 +86,11 @@ export const fetchPatientImage = async (imageKey: string): Promise<string> => {
  */
 export const getImageUrl = async (imageKey: string): Promise<string> => {
   try {
+    console.log('Getting image URL for key:', imageKey);
     const imageData = await fetchPatientImage(imageKey);
     
-    // If it's already a URL, return it
-    if (imageData.startsWith('http')) {
+    // If it's already a URL (blob URL or http), return it
+    if (imageData.startsWith('http') || imageData.startsWith('blob:')) {
       return imageData;
     }
     

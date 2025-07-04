@@ -1,7 +1,7 @@
 import { Calendar, ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hook';
-import { clearError, fetchDetailedDrilldownData, fetchDrilldownData, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
+import { clearError, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
 import { calculateTimeSlotSummary, formatDate } from '../utils/dataGenerator';
 import { getImageUrl } from '../service/imageApi';
@@ -30,21 +30,15 @@ export default function DrilldownView() {
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
 
+  // Fetch detailed data for the first day when component mounts
   useEffect(() => {
-    dispatch(fetchDrilldownData());
+    console.log('Auto-fetching detailed data for today');
+    dispatch(fetchDetailedDrilldownData());
   }, [dispatch]);
-
-  // Fetch detailed data for the first day when drilldown data is loaded
-  useEffect(() => {
-    if (dayData.length > 0 && !detailedDayData) {
-      console.log('Auto-fetching detailed data for today');
-      dispatch(fetchDetailedDrilldownData());
-    }
-  }, [dayData, detailedDayData, dispatch]);
 
   const handleRetry = () => {
     dispatch(clearError());
-    dispatch(fetchDrilldownData());
+    dispatch(fetchDetailedDrilldownData());
   };
 
   const handleDayClick = (dayIndex: number) => {
@@ -114,6 +108,14 @@ export default function DrilldownView() {
     }
   };
 
+  const handleClosePhotoModal = () => {
+    // Clean up blob URL if it exists
+    if (photoModal && photoModal.startsWith('blob:')) {
+      URL.revokeObjectURL(photoModal);
+    }
+    setPhotoModal(null);
+  };
+
   // Show loading state only for main data loading, not per-slot loading
   if (isLoading) {
     return <LoadingSpinner size="lg" message="Loading drilldown data..." />;
@@ -123,6 +125,16 @@ export default function DrilldownView() {
   if (error) {
     return <ErrorMessage message={error} onRetry={handleRetry} />;
   }
+
+  // Debug logging
+  console.log('DrilldownView - State:', {
+    dayData: dayData,
+    dayDataLength: dayData?.length,
+    detailedDayData: detailedDayData,
+    perSlotDetailedData: perSlotDetailedData,
+    isLoading,
+    error
+  });
 
   // Show empty state
   if (!dayData || dayData.length === 0) {
@@ -323,14 +335,14 @@ export default function DrilldownView() {
 
       {/* Photo Modal */}
       {photoModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPhotoModal(null)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleClosePhotoModal}>
           <div className="bg-white rounded-2xl p-6 max-w-2xl mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Patient Detection Photo
               </h3>
               <button
-                onClick={() => setPhotoModal(null)}
+                onClick={handleClosePhotoModal}
                 className="text-gray-400 hover:text-gray-600 transition-colors text-2xl"
               >
                 ×
@@ -346,7 +358,7 @@ export default function DrilldownView() {
                   <p className="text-red-600 mb-2">Failed to load image</p>
                   <p className="text-gray-600 text-sm">{imageError}</p>
                   <button
-                    onClick={() => setPhotoModal(null)}
+                    onClick={handleClosePhotoModal}
                     className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Close
