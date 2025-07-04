@@ -1,13 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { createSetState } from "../../utility";
-import { fetchPatientSummary, fetchDrilldownData, fetchDetailedDrilldownData } from "./async-action";
+import { fetchPatientSummary, fetchDrilldownData, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
 import { SummaryData, DayData } from "../../../components/modals";
 
 interface PatientState {
   summaryData: SummaryData[];
   dayData: DayData[];
   detailedDayData: DayData | null;
+  perSlotDetailedData: DayData | null;
   isLoading: boolean;
+  isPerSlotLoading: boolean;
   error: string | null;
 }
 
@@ -15,7 +17,9 @@ const initialState: PatientState = {
   summaryData: [],
   dayData: [],
   detailedDayData: null,
+  perSlotDetailedData: null,
   isLoading: false,
+  isPerSlotLoading: false,
   error: null,
 };
 
@@ -28,6 +32,9 @@ const patientSlice = createSlice({
     },
     clearDetailedData: (state) => {
       state.detailedDayData = null;
+    },
+    clearPerSlotDetailedData: (state) => {
+      state.perSlotDetailedData = null;
     },
   },
   extraReducers: (builder) => {
@@ -75,10 +82,23 @@ const patientSlice = createSlice({
       .addCase(fetchDetailedDrilldownData.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to fetch detailed drilldown data";
+      })
+      .addCase(fetchPerSlotDetailedData.pending, (state) => {
+        state.isPerSlotLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchPerSlotDetailedData.fulfilled, (state, action: PayloadAction<DayData>) => {
+        state.isPerSlotLoading = false;
+        state.perSlotDetailedData = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchPerSlotDetailedData.rejected, (state, action) => {
+        state.isPerSlotLoading = false;
+        state.error = action.error.message || "Failed to fetch per-slot detailed data";
       });
   },
 });
 
-export const { clearError, clearDetailedData } = patientSlice.actions;
-export { fetchPatientSummary, fetchDrilldownData, fetchDetailedDrilldownData } from "./async-action";
+export const { clearError, clearDetailedData, clearPerSlotDetailedData } = patientSlice.actions;
+export { fetchPatientSummary, fetchDrilldownData, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
 export default patientSlice.reducer;

@@ -201,6 +201,30 @@ interface DetailedDrilldownResponse {
   }>;
 }
 
+interface PerSlotDetailedDay {
+  [key: string]: {
+    label: string;
+    overall: {
+      total_entries: number;
+      total_detections: number;
+      total_undetected: number;
+      detection_rate: number;
+      undetected_rate: number;
+    };
+    per_bed: Array<{
+      detection_status: boolean;
+      imageURL: string | null;
+      last_updated: string;
+      bed_no: string;
+    }>;
+  } | undefined;
+}
+
+interface PerSlotDetailedResponse {
+  status: string;
+  data: PerSlotDetailedDay[];
+}
+
 export const fetchPatientSummary = createAsyncThunk(
   "patient/fetchPatientSummary",
   async ({ startDate, endDate }: { startDate: string; endDate: string }) => {
@@ -435,6 +459,59 @@ export const fetchDetailedDrilldownData = createAsyncThunk(
     } catch (error) {
       console.error('=== Detailed API Call Error ===');
       console.error('Error details:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to connect to the API server. Please check your internet connection.');
+      }
+      throw error;
+    }
+  }
+);
+
+export const fetchPerSlotDetailedData = createAsyncThunk(
+  "patient/fetchPerSlotDetailedData",
+  async ({ date, slotKey }: { date: string; slotKey: string }) => {
+    try {
+      const targetDate = date || moment().format('YYYY-MM-DD');
+      const dateISO = moment(targetDate).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
+      const url = `${environment.apiUrl}pdd/detailed/per-slot?req_date=${dateISO}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: API_CONFIG.HEADERS,
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      const data: PerSlotDetailedResponse = await response.json();
+      // Find the slot data for the requested slotKey
+      let slotData = null;
+      if (data.data && data.data.length > 0) {
+        const dayData = data.data[0];
+        slotData = dayData[slotKey];
+      }
+      const records: DetectionRecord[] = [];
+      if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed)) {
+        slotData.per_bed.forEach((bed: {
+          detection_status: boolean;
+          imageURL: string | null;
+          last_updated: string;
+          bed_no: string;
+  }) => {
+          if (bed && bed.bed_no) {
+            records.push({
+              bedId: parseInt(bed.bed_no),
+              timeSlot: slotData.label || 'Unknown Time Slot',
+              status: bed.detection_status ? 'Yes' : 'No',
+              photoUrl: bed.imageURL || '',
+            });
+          }
+        });
+      }
+      return {
+        date: targetDate,
+        records,
+      };
+    } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Network error: Unable to connect to the API server. Please check your internet connection.');
       }

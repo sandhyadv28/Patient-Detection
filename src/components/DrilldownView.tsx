@@ -1,7 +1,7 @@
 import { Calendar, ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hook';
-import { clearError, fetchDrilldownData, fetchDetailedDrilldownData, clearDetailedData } from '../store/slice/patientSlice';
+import { clearError, fetchDetailedDrilldownData, fetchDrilldownData, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
 import { calculateTimeSlotSummary, formatDate } from '../utils/dataGenerator';
 import ErrorMessage from './_common/ErrorMessage';
@@ -9,16 +9,18 @@ import LoadingSpinner from './_common/LoadingSpinner';
 
 export default function DrilldownView() {
   const dispatch = useAppDispatch();
-  
+
   // Add safety check for Redux state
   const patientState = useAppSelector((state: RootState) => state.patient);
-  
+
   // Destructure with default values to prevent undefined errors
-  const { 
-    dayData = [], 
+  const {
+    dayData = [],
     detailedDayData = null,
-    isLoading = false, 
-    error = null 
+    perSlotDetailedData = null,
+    isLoading = false,
+    isPerSlotLoading = false,
+    error = null
   } = patientState || {};
 
   const [activeDay, setActiveDay] = useState(0);
@@ -44,7 +46,7 @@ export default function DrilldownView() {
 
   const handleDayClick = (dayIndex: number) => {
     setActiveDay(dayIndex);
-    
+
     // Get the date for the selected day
     const selectedDay = dayData[dayIndex];
     if (selectedDay && selectedDay.date) {
@@ -57,17 +59,38 @@ export default function DrilldownView() {
     }
   };
 
-  const toggleSlotExpansion = (timeSlot: string) => {
+  // Helper to get slot key by index
+  const getSlotKeyByIndex = (index: number) => {
+    const slotKeys = [
+      'slot_one',
+      'slot_two',
+      'slot_three',
+      'slot_four',
+      'slot_five',
+      'slot_six',
+      'slot_seven',
+      'slot_eight',
+    ];
+    return slotKeys[index] || '';
+  };
+
+  const toggleSlotExpansion = (timeSlot: string, slotIndex: number) => {
     const newExpanded = new Set(expandedSlots);
     if (newExpanded.has(timeSlot)) {
       newExpanded.delete(timeSlot);
     } else {
       newExpanded.add(timeSlot);
+      // Fetch per-slot detailed data for this slot
+      const currentDayData = detailedDayData || dayData[activeDay];
+      if (currentDayData && currentDayData.date) {
+        const slotKey = getSlotKeyByIndex(slotIndex);
+        dispatch(fetchPerSlotDetailedData({ date: currentDayData.date, slotKey }));
+      }
     }
     setExpandedSlots(newExpanded);
   };
 
-  // Show loading state
+  // Show loading state only for main data loading, not per-slot loading
   if (isLoading) {
     return <LoadingSpinner size="lg" message="Loading drilldown data..." />;
   }
@@ -86,12 +109,12 @@ export default function DrilldownView() {
     );
   }
 
-  // Use detailed data if available, otherwise fall back to regular day data
-  const currentDayData = detailedDayData || dayData[activeDay];
+  // Use per-slot detailed data if available, otherwise fall back to detailed data, then regular day data
+  const currentDayData = perSlotDetailedData || detailedDayData || dayData[activeDay];
   const timeSlotSummaries = currentDayData ? calculateTimeSlotSummary(currentDayData) : [];
 
-  // Check if we're showing detailed data (which doesn't have individual bed records)
-  const isDetailedData = detailedDayData !== null;
+  // Check if we're showing per-slot detailed data
+  const isPerSlotDetailedData = perSlotDetailedData !== null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -114,28 +137,28 @@ export default function DrilldownView() {
             Day-wise Analysis
           </h3>
         </div>
-        
+
         <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto mb-4">
           {dayData.map((day, index) => (
             <button
               key={day.date}
               onClick={() => handleDayClick(index)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                activeDay === index
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeDay === index
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-              }`}
+                }`}
             >
               Day {index + 1}
             </button>
           ))}
         </div>
-        
+
         {currentDayData && (
           <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
             <p className="text-blue-800 font-medium">
               Selected: {formatDate(currentDayData.date)}
-              {isDetailedData && <span className="ml-2 text-sm text-blue-600">(Detailed Data)</span>}
+              {isPerSlotDetailedData && <span className="ml-2 text-sm text-green-600">(Per-Slot Detailed Data)</span>}
+              {!isPerSlotDetailedData && detailedDayData && <span className="ml-2 text-sm text-blue-600">(Detailed Data)</span>}
             </p>
           </div>
         )}
@@ -144,7 +167,7 @@ export default function DrilldownView() {
       {/* Time Slot Details */}
       {currentDayData && (
         <div className="space-y-4">
-          {timeSlotSummaries.map((summary) => (
+          {timeSlotSummaries.map((summary, idx) => (
             <div key={summary.timeSlot} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {/* Time Slot Header */}
               <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
@@ -161,7 +184,7 @@ export default function DrilldownView() {
                     </div>
                   </div>
                   <button
-                    onClick={() => toggleSlotExpansion(summary.timeSlot)}
+                    onClick={() => toggleSlotExpansion(summary.timeSlot, idx)}
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-gray-700 hover:bg-gray-100 transition-all border border-gray-200"
                   >
                     {expandedSlots.has(summary.timeSlot) ? (
@@ -221,10 +244,19 @@ export default function DrilldownView() {
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {currentDayData.records
-                            .filter(record => record.timeSlot === summary.timeSlot)
-                            .map((record) => (
+                        {isPerSlotLoading ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="flex items-center gap-3">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                              <span className="text-gray-600">Loading bed details...</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <tbody className="divide-y divide-gray-200">
+                            {(perSlotDetailedData && perSlotDetailedData.records.length > 0
+                              ? perSlotDetailedData.records
+                              : currentDayData.records.filter(record => record.timeSlot === summary.timeSlot)
+                            ).map((record) => (
                               <tr key={record.bedId} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-4 py-3 whitespace-nowrap">
                                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -253,8 +285,9 @@ export default function DrilldownView() {
                                 </td>
                               </tr>
                             ))}
-                        </tbody>
-                      </table>
+                          </tbody>
+                      )}
+                        </table>
                     </div>
                   </div>
                 </div>
@@ -280,9 +313,9 @@ export default function DrilldownView() {
               </button>
             </div>
             <div className="relative">
-              <img 
-                src={photoModal} 
-                alt="Patient Detection" 
+              <img
+                src={photoModal}
+                alt="Patient Detection"
                 className="w-full h-auto rounded-lg"
               />
               <div className="mt-4 flex justify-between items-center">
