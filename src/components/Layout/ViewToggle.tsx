@@ -1,13 +1,9 @@
 import React from 'react';
-
-interface ViewToggleProps {
-  currentView: 'summary' | 'drilldown';
-  onViewChange: (view: 'summary' | 'drilldown') => void;
-}
+import { ViewToggleProps, ViewType } from '../modals';
 
 export default function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
   return (
-    <div className="mb-8">
+    <div className="mb-4">
       <nav className="flex bg-gray-100 p-1 rounded-xl">
         <button
           onClick={() => onViewChange('summary')}

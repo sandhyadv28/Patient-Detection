@@ -1,0 +1,16 @@
+import { environment } from '../environments/environment.staging';
+
+// URL constants for API endpoints
+export const URLS = {
+    PATIENT_SUMMARY_API: `${environment.apiUrl}pdd/summary?start_date={startdate}&end_date={enddate}`
+}
+
+// API configuration constants
+export const API_CONFIG = {
+    HEADERS: {
+        'ai-api-key': '5zXq41haNrm2D2fPfn',
+        'hospital-name': 'Adarsha Hospital - Karimnagar',
+        'hospital-unit': 'ICU',
+        'Content-Type': 'application/json',
+    }
+}

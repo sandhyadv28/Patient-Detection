@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
-import { User as UserType } from '../types';
-
-interface UserProfileProps {
-  user: UserType;
-  onLogout: () => void;
-}
+import { User as UserType, UserProfileProps } from './modals';
 
 export default function UserProfile({ user, onLogout }: UserProfileProps) {
   const [isOpen, setIsOpen] = useState(false);

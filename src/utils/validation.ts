@@ -1,4 +1,4 @@
-import { DatePreset } from '../types';
+import { DatePreset, ValidationResult } from '../components/modals';
 import { APP_CONFIG } from './constants';
 
 // Date validation functions
@@ -11,7 +11,7 @@ export function isValidDateString(dateString: string): boolean {
   return isValidDate(date);
 }
 
-export function validateDateRange(startDate: Date, endDate: Date): { isValid: boolean; error?: string } {
+export function validateDateRange(startDate: Date, endDate: Date): ValidationResult {
   if (!isValidDate(startDate) || !isValidDate(endDate)) {
     return { isValid: false, error: 'Invalid date range provided' };
   }
@@ -37,7 +37,7 @@ export function isValidDatePreset(preset: string): preset is DatePreset {
 }
 
 // Data validation functions
-export function validateDayData(dayData: any): { isValid: boolean; error?: string } {
+export function validateDayData(dayData: any): ValidationResult {
   if (!Array.isArray(dayData)) {
     return { isValid: false, error: 'Day data must be an array' };
   }
@@ -55,7 +55,7 @@ export function validateDayData(dayData: any): { isValid: boolean; error?: strin
   return { isValid: true };
 }
 
-export function validateSummaryData(summaryData: any): { isValid: boolean; error?: string } {
+export function validateSummaryData(summaryData: any): ValidationResult {
   if (!Array.isArray(summaryData)) {
     return { isValid: false, error: 'Summary data must be an array' };
   }
@@ -77,7 +77,7 @@ export function validateSummaryData(summaryData: any): { isValid: boolean; error
 }
 
 // User validation
-export function validateUser(user: any): { isValid: boolean; error?: string } {
+export function validateUser(user: any): ValidationResult {
   if (!user || typeof user !== 'object') {
     return { isValid: false, error: 'User must be an object' };
   }

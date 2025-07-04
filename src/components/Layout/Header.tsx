@@ -1,16 +1,8 @@
 import React from 'react';
 import { Activity, Database } from 'lucide-react';
-import { User } from '../../types';
+import { User, HeaderProps } from '../modals';
 import ExportButton from '../ExportButton';
 import UserProfile from '../UserProfile';
-import { DayData, SummaryData } from '../../types';
-
-interface HeaderProps {
-  user: User;
-  onLogout: () => void;
-  summaryData: SummaryData[];
-  dayData: DayData[];
-}
 
 export default function Header({ user, onLogout, summaryData, dayData }: HeaderProps) {
   return (

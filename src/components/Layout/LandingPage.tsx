@@ -1,12 +1,6 @@
 import React from 'react';
-import { User } from '../../types';
+import { User, LandingPageProps } from '../modals';
 import AuthModal from '../AuthModal';
-
-interface LandingPageProps {
-  onLogin: (userData: User) => void;
-  showAuthModal: boolean;
-  onShowAuthModal: (show: boolean) => void;
-}
 
 export default function LandingPage({ onLogin, showAuthModal, onShowAuthModal }: LandingPageProps) {
   return (

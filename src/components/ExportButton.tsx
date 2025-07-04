@@ -1,12 +1,7 @@
 import React from 'react';
 import { Download } from 'lucide-react';
-import { SummaryData, DayData } from '../types';
+import { SummaryData, DayData, ExportButtonProps } from './modals';
 import { exportToCSV } from '../utils/csvExport';
-
-interface ExportButtonProps {
-  summaryData: SummaryData[];
-  dayData: DayData[];
-}
 
 export default function ExportButton({ summaryData, dayData }: ExportButtonProps) {
   const handleExport = () => {

@@ -1,15 +1,61 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, Eye, Calendar } from 'lucide-react';
-import { DayData, TimeSlotSummary, calculateTimeSlotSummary, formatDate } from '../utils/dataGenerator';
+import { Calendar, ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hook';
+import { clearError, fetchDrilldownData, fetchDetailedDrilldownData, clearDetailedData } from '../store/slice/patientSlice';
+import { RootState } from '../store/store';
+import { calculateTimeSlotSummary, formatDate } from '../utils/dataGenerator';
+import ErrorMessage from './_common/ErrorMessage';
+import LoadingSpinner from './_common/LoadingSpinner';
 
-interface DrilldownViewProps {
-  dayData: DayData[];
-}
+export default function DrilldownView() {
+  const dispatch = useAppDispatch();
+  
+  // Add safety check for Redux state
+  const patientState = useAppSelector((state: RootState) => state.patient);
+  
+  // Destructure with default values to prevent undefined errors
+  const { 
+    dayData = [], 
+    detailedDayData = null,
+    isLoading = false, 
+    error = null 
+  } = patientState || {};
 
-export default function DrilldownView({ dayData }: DrilldownViewProps) {
   const [activeDay, setActiveDay] = useState(0);
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
   const [photoModal, setPhotoModal] = useState<string | null>(null);
+
+  useEffect(() => {
+    dispatch(fetchDrilldownData());
+  }, [dispatch]);
+
+  // Fetch detailed data for the first day when drilldown data is loaded
+  useEffect(() => {
+    if (dayData.length > 0 && !detailedDayData) {
+      console.log('Auto-fetching detailed data for today');
+      dispatch(fetchDetailedDrilldownData());
+    }
+  }, [dayData, detailedDayData, dispatch]);
+
+  const handleRetry = () => {
+    dispatch(clearError());
+    dispatch(fetchDrilldownData());
+  };
+
+  const handleDayClick = (dayIndex: number) => {
+    setActiveDay(dayIndex);
+    
+    // Get the date for the selected day
+    const selectedDay = dayData[dayIndex];
+    if (selectedDay && selectedDay.date) {
+      console.log(`Fetching detailed data for day ${dayIndex + 1} with date: ${selectedDay.date}`);
+      dispatch(fetchDetailedDrilldownData(selectedDay.date));
+    } else {
+      // If no specific date, use today's date
+      console.log('Fetching detailed data for today');
+      dispatch(fetchDetailedDrilldownData());
+    }
+  };
 
   const toggleSlotExpansion = (timeSlot: string) => {
     const newExpanded = new Set(expandedSlots);
@@ -21,8 +67,31 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
     setExpandedSlots(newExpanded);
   };
 
-  const currentDayData = dayData[activeDay];
+  // Show loading state
+  if (isLoading) {
+    return <LoadingSpinner size="lg" message="Loading drilldown data..." />;
+  }
+
+  // Show error state
+  if (error) {
+    return <ErrorMessage message={error} onRetry={handleRetry} />;
+  }
+
+  // Show empty state
+  if (!dayData || dayData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <p className="text-gray-600 text-center">No drilldown data available.</p>
+      </div>
+    );
+  }
+
+  // Use detailed data if available, otherwise fall back to regular day data
+  const currentDayData = detailedDayData || dayData[activeDay];
   const timeSlotSummaries = currentDayData ? calculateTimeSlotSummary(currentDayData) : [];
+
+  // Check if we're showing detailed data (which doesn't have individual bed records)
+  const isDetailedData = detailedDayData !== null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -34,10 +103,10 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Day Tabs */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-blue-100 rounded-lg">
             <Calendar className="text-blue-600" size={20} />
           </div>
@@ -46,11 +115,11 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
           </h3>
         </div>
         
-        <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto mb-6">
+        <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto mb-4">
           {dayData.map((day, index) => (
             <button
               key={day.date}
-              onClick={() => setActiveDay(index)}
+              onClick={() => handleDayClick(index)}
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                 activeDay === index
                   ? 'bg-blue-600 text-white shadow-md'
@@ -66,6 +135,7 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
           <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
             <p className="text-blue-800 font-medium">
               Selected: {formatDate(currentDayData.date)}
+              {isDetailedData && <span className="ml-2 text-sm text-blue-600">(Detailed Data)</span>}
             </p>
           </div>
         )}
@@ -73,11 +143,11 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
 
       {/* Time Slot Details */}
       {currentDayData && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {timeSlotSummaries.map((summary) => (
             <div key={summary.timeSlot} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {/* Time Slot Header */}
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 rounded-lg">
@@ -141,7 +211,7 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                              Bed ID
+                              Bed No.
                             </th>
                             <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                               Detection Status
@@ -152,29 +222,37 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {summary.records.map((record) => (
-                            <tr key={record.bedId} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  Bed {record.bedId}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
-                                  {record.status}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center">
-                                <button
-                                  onClick={() => setPhotoModal(record.photoUrl)}
-                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
-                                >
-                                  <Eye size={16} />
-                                  View Photo
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                          {currentDayData.records
+                            .filter(record => record.timeSlot === summary.timeSlot)
+                            .map((record) => (
+                              <tr key={record.bedId} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Bed {record.bedId}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                                    {record.status}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center">
+                                  {record.photoUrl ? (
+                                    <button
+                                      onClick={() => setPhotoModal(record.photoUrl)}
+                                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                                    >
+                                      <Eye size={16} />
+                                      View Photo
+                                    </button>
+                                  ) : (
+                                    <span className="text-gray-400 text-sm">
+                                      No photo available
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
                         </tbody>
                       </table>
                     </div>
@@ -201,22 +279,27 @@ export default function DrilldownView({ dayData }: DrilldownViewProps) {
                 ×
               </button>
             </div>
-            <img
-              src={photoModal}
-              alt="Patient detection"
-              className="w-full h-auto rounded-xl shadow-lg"
-            />
-            <div className="mt-4 flex justify-between items-center">
-              <p className="text-sm text-gray-500">Click outside to close</p>
-              <a
-                href={photoModal}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
-              >
-                <ExternalLink size={16} />
-                Open in new tab
-              </a>
+            <div className="relative">
+              <img 
+                src={photoModal} 
+                alt="Patient Detection" 
+                className="w-full h-auto rounded-lg"
+              />
+              <div className="mt-4 flex justify-between items-center">
+                <button
+                  onClick={() => window.open(photoModal, '_blank')}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <ExternalLink size={16} />
+                  Open in New Tab
+                </button>
+                <button
+                  onClick={() => setPhotoModal(null)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,20 +1,8 @@
 import { useState, useEffect } from 'react';
-import { DayData, SummaryData, DatePreset } from '../types';
+import { DayData, SummaryData, DatePreset, UsePatientDataReturn } from '../components/modals';
 import { generateDummyData, calculateSummaryData, getDatePresetRange } from '../utils/dataGenerator';
 import { APP_CONFIG, UI_CONFIG } from '../utils/constants';
 import { validateDateRange } from '../utils/validation';
-
-interface UsePatientDataReturn {
-  dayData: DayData[];
-  summaryData: SummaryData[];
-  startDate: string;
-  endDate: string;
-  preset: DatePreset;
-  isLoading: boolean;
-  error: string | null;
-  handleDateRangeChange: (start: string, end: string) => void;
-  handlePresetChange: (newPreset: DatePreset) => void;
-}
 
 export function usePatientData(): UsePatientDataReturn {
   const [preset, setPreset] = useState<DatePreset>(APP_CONFIG.DEFAULT_DATE_PRESET);

@@ -1,4 +1,4 @@
-import { SummaryData, DayData } from '../types';
+import { SummaryData, DayData } from '../components/modals';
 
 export function exportToCSV(summaryData: SummaryData[], dayData: DayData[]) {
   // Create summary CSV content

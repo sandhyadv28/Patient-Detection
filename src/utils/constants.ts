@@ -7,6 +7,21 @@ export const APP_CONFIG = {
   DETECTION_STATUSES: ['Yes', 'No', 'Ambiguous'] as const,
 } as const;
 
+// Summary card configuration
+export const SUMMARY_TITLES = [
+  'Total Days',
+  'Avg Detection Rate', 
+  'Total Detections',
+  'Ambiguous Cases'
+] as const;
+
+export const SUMMARY_DATA = [
+  { key: 'totalDays', variant: 'primary' as const, suffix: undefined },
+  { key: 'avgDetectionRate', variant: 'success' as const, suffix: '%' },
+  { key: 'totalPatientDetections', variant: 'info' as const, suffix: undefined },
+  { key: 'totalAmbiguous', variant: 'warning' as const, suffix: undefined },
+];
+
 // UI constants
 export const UI_CONFIG = {
   LOADING_MESSAGES: {
@@ -24,14 +39,14 @@ export const UI_CONFIG = {
     EXPORT_SUCCESS: 'Data exported successfully!',
     LOGIN_SUCCESS: 'Login successful!',
   },
-} as const;
+};
 
 // API endpoints (for future use)
 export const API_ENDPOINTS = {
   PATIENT_DATA: '/api/patient-data',
   AUTH: '/api/auth',
   EXPORT: '/api/export',
-} as const;
+};
 
 // Date formatting options
 export const DATE_FORMAT_OPTIONS = {
@@ -41,4 +56,4 @@ export const DATE_FORMAT_OPTIONS = {
     day: 'numeric' as const,
   },
   INPUT: 'YYYY-MM-DD' as const,
-} as const; 
+}; 

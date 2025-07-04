@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import { User } from '../types';
-
-interface UseAuthReturn {
-  user: User | null;
-  showAuthModal: boolean;
-  handleLogin: (userData: User) => void;
-  handleLogout: () => void;
-  setShowAuthModal: (show: boolean) => void;
-}
+import { User, UseAuthReturn } from '../components/modals';
 
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);

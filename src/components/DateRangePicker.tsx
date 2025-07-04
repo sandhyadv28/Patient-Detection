@@ -1,14 +1,10 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
-import { DatePreset, getDatePresetRange } from '../utils/dataGenerator';
-
-interface DateRangePickerProps {
-  startDate: string;
-  endDate: string;
-  onDateRangeChange: (start: string, end: string) => void;
-  preset: DatePreset;
-  onPresetChange: (preset: DatePreset) => void;
-}
+import { getDatePresetRange } from '../utils/dataGenerator';
+import { DatePreset, DateRangePickerProps, PresetButton, DateField } from './modals';
+import DatePicker from './_common/DatePicker';
+import { useAppDispatch } from '../store/hook';
+import { fetchPatientSummary } from '../store/slice/patientSlice';
 
 export default function DateRangePicker({
   startDate,
@@ -16,37 +12,70 @@ export default function DateRangePicker({
   onDateRangeChange,
   preset,
   onPresetChange
-}: DateRangePickerProps) {
+}: Readonly<DateRangePickerProps>) {
+  const dispatch = useAppDispatch();
+
   const handlePresetClick = (newPreset: DatePreset) => {
+    console.log('=== DateRangePicker: Preset clicked ===');
+    console.log('Preset clicked:', newPreset);
     onPresetChange(newPreset);
+
     if (newPreset !== 'custom') {
       const { start, end } = getDatePresetRange(newPreset);
-      onDateRangeChange(
-        start.toISOString().split('T')[0],
-        end.toISOString().split('T')[0]
-      );
+
+      const adjustedEnd = end.clone().add(1, 'day');
+
+      const startDateStr = start.format('YYYY-MM-DD');
+      const endDateStr = adjustedEnd.format('YYYY-MM-DD');
+
+      console.log('Calculated date range:', { startDateStr, endDateStr });
+      console.log('Date objects (Local time):', {
+        start: start.format(),
+        end: adjustedEnd.format()
+      });
+
+      // ⬇️ Use adjusted end date
+      onDateRangeChange(startDateStr, endDateStr);
     }
   };
 
-  const handleCustomDateChange = (field: 'start' | 'end', value: string) => {
+  const handleCustomDateChange = (field: DateField, value: string) => {
+    console.log('=== Custom date change ===');
+    console.log('Field:', field, 'Value:', value);
+    console.log('Current dates:', { startDate, endDate });
+    
+    let newStartDate = startDate;
+    let newEndDate = endDate;
+    
     if (field === 'start') {
+      newStartDate = value;
       onDateRangeChange(value, endDate);
     } else {
+      newEndDate = value;
       onDateRangeChange(startDate, value);
     }
+    
     onPresetChange('custom');
+    
+    // If both dates are selected, trigger API call
+    if (newStartDate && newEndDate) {
+      console.log('✅ Both dates selected, triggering API call:', { newStartDate, newEndDate });
+      dispatch(fetchPatientSummary({ startDate: newStartDate, endDate: newEndDate }));
+    } else {
+      console.log('⏳ Waiting for both dates to be selected...');
+    }
   };
 
-  const presetButtons = [
-    { key: 'last7' as DatePreset, label: 'Last 7 days' },
-    { key: 'last30' as DatePreset, label: 'Last 30 days' },
-    { key: 'previousMonth' as DatePreset, label: 'Previous Month' },
-    { key: 'custom' as DatePreset, label: 'Custom Range' }
+  const presetButtons: PresetButton[] = [
+    { key: 'last7', label: 'Last 7 days' },
+    { key: 'last30', label: 'Last 30 days' },
+    { key: 'previousMonth', label: 'Previous Month' },
+    { key: 'custom', label: 'Custom Range' }
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+      <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-blue-100 rounded-lg">
           <Calendar className="text-blue-600" size={20} />
         </div>
@@ -55,7 +84,7 @@ export default function DateRangePicker({
         </h3>
       </div>
       
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex flex-wrap gap-3 mb-4">
         {presetButtons.map(button => (
           <button
             key={button.key}
@@ -72,27 +101,23 @@ export default function DateRangePicker({
       </div>
 
       {preset === 'custom' && (
-        <div className="flex gap-4 pt-4 border-t border-gray-200">
+        <div className="flex gap-4 pt-3 border-t border-gray-200">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-2">
               Start Date
             </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => handleCustomDateChange('start', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            />
+            <DatePicker 
+            value={startDate} 
+              onChange={(value) => handleCustomDateChange('start', value)}
+           />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-2">
               End Date
             </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => handleCustomDateChange('end', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            <DatePicker 
+            value={endDate} 
+              onChange={(value) => handleCustomDateChange('end', value)}
             />
           </div>
         </div>

@@ -1,12 +1,67 @@
-import React from 'react';
-import { Activity, Users, TrendingUp, AlertTriangle, BarChart3 } from 'lucide-react';
-import { SummaryData, formatDate } from '../utils/dataGenerator';
+import React, { useEffect } from 'react';
+import { BarChart3 } from 'lucide-react';
+import { formatDate } from '../utils/dataGenerator';
+import SummaryCards from './_common/SummaryCard';
+import LoadingSpinner from './_common/LoadingSpinner';
+import ErrorMessage from './_common/ErrorMessage';
+import { useAppDispatch, useAppSelector } from '../store/hook';
+import { fetchPatientSummary, clearError } from '../store/slice/patientSlice';
+import { RootState } from '../store/store';
 
 interface SummaryViewProps {
-  summaryData: SummaryData[];
+  startDate: string;
+  endDate: string;
+  preset: string;
 }
 
-export default function SummaryView({ summaryData }: SummaryViewProps) {
+export default function SummaryView({ startDate, endDate, preset }: SummaryViewProps) {
+  const dispatch = useAppDispatch();
+  
+  // Add safety check for Redux state
+  const patientState = useAppSelector((state: RootState) => state.patient);
+  console.log('patientState', patientState);
+  
+  // Destructure with default values to prevent undefined errors
+  const { 
+    summaryData = [], 
+    isLoading = false, 
+    error = null 
+  } = patientState || {};
+
+  useEffect(() => {
+    if (startDate && endDate && preset !== 'custom') {
+      console.log('=== SummaryView: Making API call ===');
+      console.log('Date range:', { startDate, endDate });
+      dispatch(fetchPatientSummary({ startDate, endDate }));
+    }
+  }, [dispatch, startDate, endDate, preset]);
+
+  const handleRetry = () => {
+    dispatch(clearError());
+    if (startDate && endDate) {
+      dispatch(fetchPatientSummary({ startDate, endDate }));
+    }
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return <LoadingSpinner size="lg" message="Loading patient data..." />;
+  }
+
+  // Show error state
+  if (error) {
+    return <ErrorMessage message={error} onRetry={handleRetry} />;
+  }
+
+  // Show empty state
+  if (!summaryData || summaryData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8">
+        <p className="text-gray-600 text-center">No patient data available for the selected date range.</p>
+      </div>
+    );
+  }
+
   const totalDays = summaryData.length;
   const avgDetectionRate = summaryData.length > 0 
     ? Math.round(summaryData.reduce((sum, day) => sum + day.detectedPercentage, 0) / summaryData.length)
@@ -14,66 +69,17 @@ export default function SummaryView({ summaryData }: SummaryViewProps) {
   const totalPatientDetections = summaryData.reduce((sum, day) => sum + day.detected, 0);
   const totalAmbiguous = summaryData.reduce((sum, day) => sum + day.ambiguous, 0);
 
+  const summaryValues = {
+    totalDays,
+    avgDetectionRate,
+    totalPatientDetections,
+    totalAmbiguous,
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Total Days</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {totalDays}
-              </p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Activity className="text-blue-600" size={24} />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Avg Detection Rate</p>
-              <p className="text-3xl font-bold text-green-600">
-                {avgDetectionRate}%
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-xl">
-              <TrendingUp className="text-green-600" size={24} />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Total Detections</p>
-              <p className="text-3xl font-bold text-blue-600">
-                {totalPatientDetections}
-              </p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Users className="text-blue-600" size={24} />
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Ambiguous Cases</p>
-              <p className="text-3xl font-bold text-orange-600">
-                {totalAmbiguous}
-              </p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-xl">
-              <AlertTriangle className="text-orange-600" size={24} />
-            </div>
-          </div>
-        </div>
-      </div>
+      <SummaryCards summaryValues={summaryValues} />
 
       {/* Summary Table */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -99,9 +105,6 @@ export default function SummaryView({ summaryData }: SummaryViewProps) {
                   Date
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Active Beds
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Patients Detected
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -122,11 +125,6 @@ export default function SummaryView({ summaryData }: SummaryViewProps) {
                     <div className="font-medium text-gray-900">
                       {formatDate(day.date)}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {day.totalBeds}
-                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-lg font-semibold text-green-600">

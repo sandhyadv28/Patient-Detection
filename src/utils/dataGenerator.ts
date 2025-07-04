@@ -1,6 +1,7 @@
-import { DayData, DetectionRecord, SummaryData, TimeSlotSummary } from '../types';
+import { DayData, DetectionRecord, SummaryData, TimeSlotSummary } from '../components/modals';
 import { APP_CONFIG, DATE_FORMAT_OPTIONS } from './constants';
 import { validateDateRange } from './validation';
+import moment from 'moment-timezone';
 
 // Enhanced data generation with more realistic patterns
 function generateDetectionStatus(timeSlot: string, bedId: number): 'Yes' | 'No' | 'Ambiguous' {
@@ -140,24 +141,27 @@ export function formatDate(dateString: string): string {
   }
 }
 
-export function getDatePresetRange(preset: string): { start: Date; end: Date } {
-  const today = new Date();
-  const start = new Date();
-  const end = new Date(today);
+export function getDatePresetRange(preset: string): { start: moment.Moment; end: moment.Moment } {
+  const today = moment();
+  let start: moment.Moment;
+  let end: moment.Moment;
   
   switch (preset) {
     case 'last7':
-      start.setDate(today.getDate() - 6);
+      start = moment().subtract(6, 'days');
+      end = moment();
       break;
     case 'last30':
-      start.setDate(today.getDate() - 29);
+      start = moment().subtract(29, 'days');
+      end = moment();
       break;
     case 'previousMonth':
-      start.setMonth(today.getMonth() - 1, 1);
-      end.setMonth(today.getMonth(), 0);
+      start = moment().subtract(1, 'month').startOf('month');
+      end = moment().subtract(1, 'month').endOf('month');
       break;
     default:
-      start.setDate(today.getDate() - 6);
+      start = moment().subtract(6, 'days');
+      end = moment();
   }
   
   return { start, end };

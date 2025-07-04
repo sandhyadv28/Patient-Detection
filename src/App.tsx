@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
-import { usePatientData } from './hooks/usePatientData';
-import { useAuth } from './hooks/useAuth';
-import Header from './components/Layout/Header';
+import { useState } from 'react';
+import DateRangePicker from './components/DateRangePicker';
+import DrilldownView from './components/DrilldownView';
 import Footer from './components/Layout/Footer';
+import Header from './components/Layout/Header';
 import LandingPage from './components/Layout/LandingPage';
 import ViewToggle from './components/Layout/ViewToggle';
-import DateRangePicker from './components/DateRangePicker';
 import SummaryView from './components/SummaryView';
-import DrilldownView from './components/DrilldownView';
-import LoadingSpinner from './components/UI/LoadingSpinner';
-import ErrorMessage from './components/UI/ErrorMessage';
+import { ViewType } from './components/modals';
+import { useAuth } from './hooks/useAuth';
+import { usePatientData } from './hooks/usePatientData';
 
 function App() {
-  const [currentView, setCurrentView] = useState<'summary' | 'drilldown'>('summary');
+  const [currentView, setCurrentView] = useState<ViewType>('summary');
   const { user, showAuthModal, handleLogin, handleLogout, setShowAuthModal } = useAuth();
   const {
     dayData,
@@ -25,6 +24,9 @@ function App() {
     handleDateRangeChange,
     handlePresetChange,
   } = usePatientData();
+
+  // Create dateRange string for API
+  const dateRange = preset;
 
   // Show landing page if user is not authenticated
   if (!user) {
@@ -46,9 +48,9 @@ function App() {
         dayData={dayData}
       />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Date Range Picker */}
-        <div className="mb-8">
+        <div className="mb-4">
           <DateRangePicker
             startDate={startDate}
             endDate={endDate}
@@ -66,20 +68,10 @@ function App() {
 
         {/* Main Content */}
         <main>
-          {isLoading ? (
-            <LoadingSpinner message="Loading patient data..." />
-          ) : error ? (
-            <ErrorMessage 
-              message={error} 
-              onRetry={() => {
-                // Trigger data reload by updating date range
-                handleDateRangeChange(startDate, endDate);
-              }}
-            />
-          ) : currentView === 'summary' ? (
-            <SummaryView summaryData={summaryData} />
+          {currentView === 'summary' ? (
+            <SummaryView startDate={startDate} endDate={endDate} preset={preset} />
           ) : (
-            <DrilldownView dayData={dayData} />
+            <DrilldownView />
           )}
         </main>
 

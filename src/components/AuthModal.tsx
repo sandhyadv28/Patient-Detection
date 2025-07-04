@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User as UserIcon, Eye, EyeOff } from 'lucide-react';
-import { User } from '../types';
-
-interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onLogin: (user: User) => void;
-}
+import { User, AuthModalProps, AuthFormData } from './modals';
 
 export default function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AuthFormData>({
     name: '',
     email: '',
     password: ''
