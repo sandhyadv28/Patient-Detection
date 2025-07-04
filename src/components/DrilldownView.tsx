@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../store/hook';
 import { clearError, fetchDetailedDrilldownData, fetchDrilldownData, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
 import { calculateTimeSlotSummary, formatDate } from '../utils/dataGenerator';
+import { getImageUrl } from '../service/imageApi';
 import ErrorMessage from './_common/ErrorMessage';
 import LoadingSpinner from './_common/LoadingSpinner';
 
@@ -26,6 +27,8 @@ export default function DrilldownView() {
   const [activeDay, setActiveDay] = useState(0);
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
   const [photoModal, setPhotoModal] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchDrilldownData());
@@ -88,6 +91,27 @@ export default function DrilldownView() {
       }
     }
     setExpandedSlots(newExpanded);
+  };
+
+  const handleViewPhoto = async (imageKey: string) => {
+    if (!imageKey) {
+      setImageError('No image key available');
+      return;
+    }
+
+    setIsImageLoading(true);
+    setImageError(null);
+    
+    try {
+      console.log('Fetching image for key:', imageKey);
+      const imageUrl = await getImageUrl(imageKey);
+      setPhotoModal(imageUrl);
+    } catch (error) {
+      console.error('Error fetching image:', error);
+      setImageError(error instanceof Error ? error.message : 'Failed to load image');
+    } finally {
+      setIsImageLoading(false);
+    }
   };
 
   // Show loading state only for main data loading, not per-slot loading
@@ -270,11 +294,12 @@ export default function DrilldownView() {
                                 <td className="px-4 py-3 whitespace-nowrap text-center">
                                   {record.photoUrl ? (
                                     <button
-                                      onClick={() => setPhotoModal(record.photoUrl)}
-                                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                                      onClick={() => handleViewPhoto(record.photoUrl)}
+                                      disabled={isImageLoading}
+                                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                       <Eye size={16} />
-                                      View Photo
+                                      {isImageLoading ? 'Loading...' : 'View Photo'}
                                     </button>
                                   ) : (
                                     <span className="text-gray-400 text-sm">
@@ -311,23 +336,45 @@ export default function DrilldownView() {
                 ×
               </button>
             </div>
-            <img
-              src={photoModal}
-              alt="Patient detection"
-              className="w-full h-auto rounded-xl shadow-lg"
-            />
-            <div className="mt-4 flex justify-between items-center">
-              <p className="text-sm text-gray-500">Click outside to close</p>
-              <a
-                href={photoModal}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
-              >
-                <ExternalLink size={16} />
-                Open in new tab
-              </a>
-            </div>
+            {isImageLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner size="md" message="Loading image..." />
+              </div>
+            ) : imageError ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-600 mb-2">Failed to load image</p>
+                  <p className="text-gray-600 text-sm">{imageError}</p>
+                  <button
+                    onClick={() => setPhotoModal(null)}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <img
+                src={photoModal}
+                alt="Patient detection"
+                className="w-full h-auto rounded-xl shadow-lg"
+                onError={() => setImageError('Failed to load image')}
+              />
+            )}
+            {!isImageLoading && !imageError && (
+              <div className="mt-4 flex justify-between items-center">
+                <p className="text-sm text-gray-500">Click outside to close</p>
+                <a
+                  href={photoModal}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  <ExternalLink size={16} />
+                  Open in new tab
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
