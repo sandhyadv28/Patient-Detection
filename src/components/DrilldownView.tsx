@@ -97,6 +97,7 @@ export default function DrilldownView() {
       return;
     }
 
+    setPhotoModal('loading');
     setIsImageLoading(true);
     setImageError(null);
     
@@ -110,6 +111,7 @@ export default function DrilldownView() {
     } catch (error) {
       console.error('Error fetching image:', error);
       setImageError(error instanceof Error ? error.message : 'Failed to load image');
+      setPhotoModal('error');
     } finally {
       setIsImageLoading(false);
     }
@@ -343,7 +345,7 @@ export default function DrilldownView() {
       {/* Photo Modal */}
       {photoModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]" onClick={handleClosePhotoModal}>
-          <div className="bg-white rounded-2xl p-6 max-w-2xl mx-4 shadow-2xl relative z-[10000]" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-4 w-[36rem] h-[52vh] shadow-2xl relative z-[10000]" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Patient Detection Photo
@@ -355,12 +357,14 @@ export default function DrilldownView() {
                 ×
               </button>
             </div>
-            {isImageLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner size="md" message="Loading image..." />
-              </div>
-            ) : imageError ? (
-              <div className="flex items-center justify-center py-8">
+            
+            <div className="w-full h-80 flex items-center justify-center">
+              {/* Show loading state */}
+              {photoModal === 'loading' || isImageLoading ? (
+                <div className="flex items-center justify-center">
+                  <LoadingSpinner size="md" message="Loading image..." />
+                </div>
+              ) : photoModal === 'error' || imageError ? (
                 <div className="text-center">
                   <p className="text-red-600 mb-2">Failed to load image</p>
                   <p className="text-gray-600 text-sm">{imageError}</p>
@@ -371,29 +375,30 @@ export default function DrilldownView() {
                     Close
                   </button>
                 </div>
-              </div>
-            ) : (
-              <img
-                src={photoModal}
-                alt="Patient detection"
-                className="w-full h-auto rounded-xl shadow-lg"
-                onError={() => setImageError('Failed to load image')}
-              />
-            )}
-            {!isImageLoading && !imageError && (
-              <div className="mt-4 flex justify-between items-center">
-                <p className="text-sm text-gray-500">Click outside to close</p>
-                <a
-                  href={photoModal}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  <ExternalLink size={16} />
-                  Open in new tab
-                </a>
-              </div>
-            )}
+              ) : (
+                /* Show image */
+                <div className="w-full h-full flex flex-col">
+                  <img
+                    src={photoModal}
+                    alt="Patient detection"
+                    className="w-full h-full rounded-xl shadow-lg"
+                    onError={() => setImageError('Failed to load image')}
+                  />
+                  <div className="mt-4 flex justify-between items-center">
+                    <p className="text-sm text-gray-500">Click outside to close</p>
+                    <a
+                      href={photoModal}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      <ExternalLink size={16} />
+                      Open in new tab
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
