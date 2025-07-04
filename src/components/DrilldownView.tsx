@@ -144,8 +144,8 @@ export default function DrilldownView() {
               key={day.date}
               onClick={() => handleDayClick(index)}
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeDay === index
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
               Day {index + 1}
@@ -286,8 +286,8 @@ export default function DrilldownView() {
                               </tr>
                             ))}
                           </tbody>
-                      )}
-                        </table>
+                        )}
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -312,27 +312,22 @@ export default function DrilldownView() {
                 ×
               </button>
             </div>
-            <div className="relative">
-              <img
-                src={photoModal}
-                alt="Patient Detection"
-                className="w-full h-auto rounded-lg"
-              />
-              <div className="mt-4 flex justify-between items-center">
-                <button
-                  onClick={() => window.open(photoModal, '_blank')}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <ExternalLink size={16} />
-                  Open in New Tab
-                </button>
-                <button
-                  onClick={() => setPhotoModal(null)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
+            <img
+              src={photoModal}
+              alt="Patient detection"
+              className="w-full h-auto rounded-xl shadow-lg"
+            />
+            <div className="mt-4 flex justify-between items-center">
+              <p className="text-sm text-gray-500">Click outside to close</p>
+              <a
+                href={photoModal}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <ExternalLink size={16} />
+                Open in new tab
+              </a>
             </div>
           </div>
         </div>
