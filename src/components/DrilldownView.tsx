@@ -88,7 +88,11 @@ export default function DrilldownView() {
   };
 
   const handleViewPhoto = async (imageKey: string) => {
+    console.log('handleViewPhoto called with imageKey:', imageKey);
+    console.log('Current photoModal state:', photoModal);
+    
     if (!imageKey) {
+      console.log('No image key provided, setting error');
       setImageError('No image key available');
       return;
     }
@@ -99,7 +103,10 @@ export default function DrilldownView() {
     try {
       console.log('Fetching image for key:', imageKey);
       const imageUrl = await getImageUrl(imageKey);
+      console.log('Image URL received:', imageUrl);
+      console.log('Setting photoModal to:', imageUrl);
       setPhotoModal(imageUrl);
+      console.log('Photo modal state should now be:', imageUrl);
     } catch (error) {
       console.error('Error fetching image:', error);
       setImageError(error instanceof Error ? error.message : 'Failed to load image');
@@ -335,8 +342,8 @@ export default function DrilldownView() {
 
       {/* Photo Modal */}
       {photoModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleClosePhotoModal}>
-          <div className="bg-white rounded-2xl p-6 max-w-2xl mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]" onClick={handleClosePhotoModal}>
+          <div className="bg-white rounded-2xl p-6 max-w-2xl mx-4 shadow-2xl relative z-[10000]" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Patient Detection Photo

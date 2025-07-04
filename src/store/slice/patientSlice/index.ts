@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { createSetState } from "../../utility";
-import { fetchPatientSummary, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
-import { SummaryData, DayData } from "../../../components/modals";
+import { DayData, SummaryData } from "../../../components/modals";
+import { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
 
 interface PatientState {
   summaryData: SummaryData[];
@@ -94,5 +93,5 @@ const patientSlice = createSlice({
 });
 
 export const { clearError, clearDetailedData, clearPerSlotDetailedData } = patientSlice.actions;
-export { fetchPatientSummary, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from "./async-action";
+export { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
 export default patientSlice.reducer;
