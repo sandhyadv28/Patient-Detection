@@ -24,7 +24,6 @@ export default function AuthInitializer({ children }: AuthInitializerProps) {
       // await dispatch(fetchUserProfile());
       // await dispatch(initializeAppData());
       
-      console.log('API initialized successfully');
     } catch (error) {
       console.error('Failed to initialize API:', error);
       // Handle initialization error - could redirect to login or show error
