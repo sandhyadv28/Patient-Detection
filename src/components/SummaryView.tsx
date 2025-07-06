@@ -11,20 +11,6 @@ import {
 } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
 
-// Define the extended SummaryData interface locally
-interface SummaryData {
-  date: string;
-  totalBeds: number;
-  detected: number;
-  notDetected: number;
-  ambiguous: number;
-  detectedPercentage: number;
-  notDetectedPercentage: number;
-  ambiguousPercentage: number;
-  hospital: string;
-  hospitalUnit: string;
-}
-
 interface SummaryViewProps {
   startDate: string;
   endDate: string;
@@ -34,18 +20,8 @@ interface SummaryViewProps {
 export default function SummaryView({ startDate, endDate, preset }: SummaryViewProps) {
   const dispatch = useAppDispatch();
   
-  // Add safety check for Redux state
-  const patientState = useAppSelector((state: RootState) => state.patient);
-  
-  // Destructure with default values to prevent undefined errors
-  const { 
-    summaryData = [] as SummaryData[], 
-    isLoading = false, 
-    error = null 
-  } = patientState || {};
-
-  // Additional safety check to ensure summaryData is always an array
-  const safeSummaryData = Array.isArray(summaryData) ? summaryData as SummaryData[] : [];
+  const patientSummaryData = useAppSelector((state: RootState) => state.patient);
+  const { summaryData = null, isLoading = false, error = null } = patientSummaryData || {};
 
   useEffect(() => {
     if (startDate && endDate && preset !== 'custom') {
@@ -72,7 +48,7 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
   }
 
   // Show empty state
-  if (!safeSummaryData || safeSummaryData.length === 0) {
+  if (!summaryData || !summaryData.daily_breakdown || summaryData.daily_breakdown.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
         <p className="text-gray-600 text-center">No patient data available for the selected date range.</p>
@@ -80,12 +56,9 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
     );
   }
 
-  const totalDays = safeSummaryData.length;
-  const avgDetectionRate = safeSummaryData.length > 0 
-    ? Math.round(safeSummaryData.reduce((sum, day) => sum + day.detectedPercentage, 0) / safeSummaryData.length)
-    : 0;
-  const totalPatientDetections = safeSummaryData.reduce((sum, day) => sum + day.detected, 0);
-  const totalAmbiguous = safeSummaryData.reduce((sum, day) => sum + day.ambiguous, 0);
+  // Destructure data directly where needed
+  const { daily_breakdown, overall_summary } = summaryData;
+  const totalAmbiguous = 0;
 
   return (
     <div className="space-y-4">
@@ -93,23 +66,23 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
       <div className="grid grid-cols-4 gap-6">
         <SummaryCard
           title="Total Days"
-          value={totalDays}
+          value={daily_breakdown.length}
           variant="primary"
         />
         <SummaryCard
-          title="Avg Detection Rate"
-          value={avgDetectionRate}
+          title="Total Detections"
+          value={overall_summary.total_entries}
           variant="success"
           suffix="%"
         />
         <SummaryCard
-          title="Total Detections"
-          value={totalPatientDetections}
+          title="Patients Detected"
+          value={overall_summary.total_detections}
           variant="info"
         />
         <SummaryCard
-          title="Total Ambiguous"
-          value={totalAmbiguous}
+          title="Not Detected"
+          value={overall_summary.total_undetected}
           variant="warning"
         />
       </div>
@@ -125,11 +98,9 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
               <h3 className="text-lg font-semibold text-gray-900">
                 Daily Summary
               </h3>
-              {safeSummaryData.length > 0 && (
-                <p className="text-sm text-gray-600">
-                  {safeSummaryData[0].hospital} - {safeSummaryData[0].hospitalUnit}
-                </p>
-              )}
+              <p className="text-sm text-gray-600">
+                {overall_summary.hospital} - {overall_summary.hospital_unit}
+              </p>
             </div>
           </div>
         </div>
@@ -142,21 +113,21 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
                   Date
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Total Beds
+                  Total Detected
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Patients Detected
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Detection Rate
+                Not Detected
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Not Detected
+                Ambiguous
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {safeSummaryData.map((day, index) => (
+              {daily_breakdown.map((day, index) => (
                 <tr key={day.date} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900">
@@ -165,28 +136,28 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-gray-600 font-medium">
-                      {day.totalBeds}
+                      {day.total_entries}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-lg font-semibold text-green-600">
-                      {day.detected}
+                      {day.total_detections} ({day.detection_rate}%)
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="flex items-center justify-center">
                       <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        day.detectedPercentage >= 80 ? 'bg-green-100 text-green-800' :
-                        day.detectedPercentage >= 60 ? 'bg-orange-100 text-orange-800' :
+                        day.detection_rate >= 80 ? 'bg-green-100 text-green-800' :
+                        day.detection_rate >= 60 ? 'bg-orange-100 text-orange-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {day.detectedPercentage}%
+                      {day.total_undetected} ({day.undetected_rate}%)
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <span className="text-gray-600 font-medium">
-                      {day.notDetected} ({day.notDetectedPercentage}%)
+                      {totalAmbiguous}
                     </span>
                   </td>
                 </tr>

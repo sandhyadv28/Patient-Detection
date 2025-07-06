@@ -162,7 +162,7 @@ interface SummaryDataWithHospital extends SummaryData {
 
 export const fetchPatientSummary = createAsyncThunk(
   "patient/fetchPatientSummary",
-  async ({ startDate, endDate }: { startDate: string; endDate: string }, { dispatch }) => {
+  async ({ startDate, endDate }: { startDate: string; endDate: string }, { rejectWithValue }) => {
     try {
       // Convert dates to ISO format with specific time (9:04 PM IST = 15:34:07 UTC) for API compatibility
       const startDateISO = moment(startDate).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
@@ -174,41 +174,16 @@ export const fetchPatientSummary = createAsyncThunk(
         endDate: endDateISO
       }) as ApiResponse;
       
-      console.log('API Response:', response);
-      
-      // Transform the response to match SummaryData[] interface
-      let summaryData: SummaryDataWithHospital[] = [];
-      
-      if (response?.status === 'success' && response.data?.daily_breakdown) {
-        summaryData = response.data.daily_breakdown.map((day: DailyBreakdown) => ({
-          date: day.date,
-          totalBeds: day.total_entries,
-          detected: day.total_detections,
-          notDetected: day.total_undetected,
-          ambiguous: 0, // API doesn't provide ambiguous data
-          detectedPercentage: day.detection_rate,
-          notDetectedPercentage: day.undetected_rate,
-          ambiguousPercentage: 0, // API doesn't provide ambiguous data
-          hospital: day.hospital,
-          hospitalUnit: day.hospital_unit
-        }));
-      } else {
-        console.warn('Unexpected API response format:', response);
-        summaryData = [];
-      }
-      
-      console.log(' summaryData:', summaryData);
-      return summaryData;
+      return response.data;
       
     } catch (error) {
-      console.error('API Call Error:', error);
       const errorMessage = error instanceof TypeError && error.message.includes('fetch')
         ? 'Network error: Unable to connect to the API server. Please check your internet connection.'
         : error instanceof Error 
           ? error.message 
           : 'Failed to fetch patient summary';
       
-      throw new Error(errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );

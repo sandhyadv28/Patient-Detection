@@ -1,10 +1,33 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { DayData, SummaryData } from "../../../components/modals";
+import { DayData } from "../../../components/modals";
 import { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
 import { createSetState } from "../../utility";
 
+// Raw API response interface
+interface SummaryResponse {
+  overall_summary: {
+    hospital: string;
+    hospital_unit: string;
+    total_entries: number;
+    total_detections: number;
+    total_undetected: number;
+    detection_rate: number;
+    undetected_rate: number;
+  };
+  daily_breakdown: Array<{
+    date: string;
+    hospital: string;
+    hospital_unit: string;
+    total_entries: number;
+    total_detections: number;
+    total_undetected: number;
+    detection_rate: number;
+    undetected_rate: number;
+  }>;
+}
+
 interface PatientState {
-  summaryData: SummaryData[];
+  summaryData: SummaryResponse | null;
   dayData: DayData[];
   detailedDayData: DayData | null;
   perSlotDetailedData: DayData | null;
@@ -14,7 +37,7 @@ interface PatientState {
 }
 
 const initialState: PatientState = {
-  summaryData: [],
+  summaryData: null,
   dayData: [],
   detailedDayData: null,
   perSlotDetailedData: null,
