@@ -186,8 +186,8 @@ export const fetchPatientSummary = createAsyncThunk(
           detected: day.total_detections,
           notDetected: day.total_undetected,
           ambiguous: 0, // API doesn't provide ambiguous data
-          detectedPercentage: Math.round(day.detection_rate),
-          notDetectedPercentage: Math.round(day.undetected_rate),
+          detectedPercentage: day.detection_rate,
+          notDetectedPercentage: day.undetected_rate,
           ambiguousPercentage: 0, // API doesn't provide ambiguous data
           hospital: day.hospital,
           hospitalUnit: day.hospital_unit
@@ -197,7 +197,7 @@ export const fetchPatientSummary = createAsyncThunk(
         summaryData = [];
       }
       
-      console.log('Transformed data:', summaryData);
+      console.log(' summaryData:', summaryData);
       return summaryData;
       
     } catch (error) {
