@@ -155,11 +155,6 @@ interface SummaryData {
   ambiguousPercentage: number;
 }
 
-interface SummaryDataWithHospital extends SummaryData {
-  hospital: string;
-  hospitalUnit: string;
-}
-
 export const fetchPatientSummary = createAsyncThunk(
   "patient/fetchPatientSummary",
   async ({ startDate, endDate }: { startDate: string; endDate: string }, { rejectWithValue }) => {
@@ -190,108 +185,33 @@ export const fetchPatientSummary = createAsyncThunk(
 
 export const fetchDetailedDrilldownData = createAsyncThunk(
   "patient/fetchDetailedDrilldownData",
-  async (date?: string) => {
+  async (date: string = moment().format('YYYY-MM-DD'), { rejectWithValue }) => {
     try {
-      // Use provided date or default to today's date
-      const targetDate = date || moment().format('YYYY-MM-DD');
-      
-      // Convert date to ISO format with specific time (9:04 PM IST = 15:34:07 UTC) for API compatibility
-      const dateISO = moment(targetDate).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
+      const dateISO = moment(date).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
       
       console.log('=== Detailed Drilldown API Call ===');
-      console.log('Input date:', targetDate);
+      console.log('Input date:', date);
       console.log('ISO date:', dateISO);
       
-      // Build URL using environment configuration
-      const url = `${environment.apiUrl}pdd/detailed/overall?req_date=${dateISO}`;
+      const response = await API.fetchDetailedData(dateISO);
       
-      console.log('API URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: API_CONFIG.HEADERS,
-      });
-      
+      console.log('=== Detailed API Response ===');
+      console.log('Full response:', response);
+      console.log('Response data:', response.data);
       console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error response:', errorText);
-        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
-      }
+      return response.data;
       
-      const data: DetailedDrilldownResponse = await response.json();
-      console.log('Detailed API Response data:', data);
-      
-      // Transform the detailed API response to match DayData interface
-      // Create summary records for each time slot based on the overall data
-      const records: DetectionRecord[] = [];
-      
-      if (data.data && data.data.length > 0) {
-        const dayData = data.data[0]; // Get the first (and only) day's data
-        
-        // Process each time slot
-        const slots = [
-          { key: 'slot_one', data: dayData.slot_one },
-          { key: 'slot_two', data: dayData.slot_two },
-          { key: 'slot_three', data: dayData.slot_three },
-          { key: 'slot_four', data: dayData.slot_four },
-          { key: 'slot_five', data: dayData.slot_five },
-          { key: 'slot_six', data: dayData.slot_six },
-          { key: 'slot_seven', data: dayData.slot_seven },
-          { key: 'slot_eight', data: dayData.slot_eight }
-        ];
-        
-        slots.forEach((slotInfo) => {
-          const slot = slotInfo.data;
-          if (slot && slot.overall && slot.overall.total_entries > 0) {
-            console.log(`Processing ${slotInfo.key}:`, slot);
-            
-            // Create summary records for this time slot
-            // Since we don't have individual bed data, we'll create placeholder records
-            // based on the overall statistics
-            const totalEntries = slot.overall.total_entries;
-            const totalDetections = slot.overall.total_detections;
-            const totalUndetected = slot.overall.total_undetected;
-            
-            // Create detected records
-            for (let i = 0; i < totalDetections; i++) {
-              records.push({
-                bedId: i + 1,
-                timeSlot: slot.label,
-                status: 'Yes',
-                photoUrl: '', // No photo URL available in detailed API
-              });
-            }
-            
-            // Create undetected records
-            for (let i = 0; i < totalUndetected; i++) {
-              records.push({
-                bedId: totalDetections + i + 1,
-                timeSlot: slot.label,
-                status: 'No',
-                photoUrl: '', // No photo URL available in detailed API
-              });
-            }
-          }
-        });
-      }
-      
-      const transformedData: DayData = {
-        date: targetDate,
-        records: records,
-      };
-      
-      console.log('Transformed detailed data:', transformedData);
-      return transformedData;
     } catch (error) {
-      console.error('=== Detailed API Call Error ===');
+      console.error('=== Detailed API Error ===');
       console.error('Error details:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error: Unable to connect to the API server. Please check your internet connection.');
-      }
-      throw error;
+      const errorMessage = error instanceof TypeError && error.message.includes('fetch')
+        ? 'Network error: Unable to connect to the API server. Please check your internet connection.'
+        : error instanceof Error 
+          ? error.message 
+          : 'Failed to fetch detailed data';
+      
+      return rejectWithValue(errorMessage);
     }
   }
 );

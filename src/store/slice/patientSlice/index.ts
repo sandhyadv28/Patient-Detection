@@ -3,7 +3,7 @@ import { DayData } from "../../../components/modals";
 import { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
 import { createSetState } from "../../utility";
 
-// Raw API response interface
+// Raw API response interfaces
 interface SummaryResponse {
   overall_summary: {
     hospital: string;
@@ -26,10 +26,96 @@ interface SummaryResponse {
   }>;
 }
 
+interface DetailedResponse {
+  status: string;
+  data: Array<{
+    slot_one?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+    slot_two?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+    slot_three?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+    slot_four?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+    slot_five?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+    slot_six?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+    slot_seven?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+    slot_eight?: {
+      label: string;
+      overall: {
+        total_entries: number;
+        total_detections: number;
+        total_undetected: number;
+        detection_rate: number;
+        undetected_rate: number;
+      };
+    };
+  }>;
+}
+
 interface PatientState {
   summaryData: SummaryResponse | null;
   dayData: DayData[];
-  detailedDayData: DayData | null;
+  detailedDayData: DetailedResponse['data'] | null;
   perSlotDetailedData: DayData | null;
   isLoading: boolean;
   isPerSlotLoading: boolean;
