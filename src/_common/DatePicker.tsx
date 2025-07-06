@@ -1,9 +1,9 @@
 import moment from 'moment-timezone';
 import React, { useEffect, useRef, useState } from 'react';
-import CalendarIcon from '../../assests/calender.svg';
-import ChevronDownIcon from '../../assests/chevron_down.svg';
-import ChevronLeftIcon from '../../assests/chevron_left.svg';
-import ChevronRightIcon from '../../assests/chevron_right.svg';
+import CalendarIcon from '../assests/calender.svg';
+import ChevronDownIcon from '../assests/chevron_down.svg';
+import ChevronLeftIcon from '../assests/chevron_left.svg';
+import ChevronRightIcon from '../assests/chevron_right.svg';
 
 interface DatePickerProps {
   value: string;
