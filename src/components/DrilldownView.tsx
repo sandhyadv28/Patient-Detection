@@ -5,8 +5,8 @@ import { clearError, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from
 import { RootState } from '../store/store';
 import { calculateTimeSlotSummary, formatDate } from '../utils/dataGenerator';
 import { getImageUrl } from '../service/imageApi';
-import ErrorMessage from './_common/ErrorMessage';
-import LoadingSpinner from './_common/LoadingSpinner';
+import ErrorMessage from '../_common/ErrorMessage';
+import LoadingSpinner from '../_common/LoadingSpinner';
 
 export default function DrilldownView() {
   const dispatch = useAppDispatch();

@@ -9,17 +9,6 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [
-          "patient/fetchPatientSummary/pending",
-          "patient/fetchPatientSummary/fulfilled",
-          "patient/fetchPatientSummary/rejected",
-          "patient/fetchDetailedDrilldownData/pending",
-          "patient/fetchDetailedDrilldownData/fulfilled",
-          "patient/fetchDetailedDrilldownData/rejected",
-          "patient/fetchPerSlotDetailedData/pending",
-          "patient/fetchPerSlotDetailedData/fulfilled",
-          "patient/fetchPerSlotDetailedData/rejected",
-        ],
         ignoredPaths: [""],
       },
     }),

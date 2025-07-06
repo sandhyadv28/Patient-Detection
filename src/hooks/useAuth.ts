@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getCurrentUser } from '../_lib/localStorage.util';
+import { getCurrentUser } from '../utils/localStorage.util';
 import { UseAuthReturn, User } from '../components/modals';
 import { handleLogout, initializeAuthFromURL, checkAuthStatus } from '../utils/auth';
 

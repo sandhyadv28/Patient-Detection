@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 import { getDatePresetRange } from '../utils/dataGenerator';
 import { DatePreset, DateRangePickerProps, PresetButton, DateField } from './modals';
-import DatePicker from './_common/DatePicker';
+import DatePicker from '../_common/DatePicker';
 import { useAppDispatch } from '../store/hook';
 import { fetchPatientSummary } from '../store/slice/patientSlice';
 

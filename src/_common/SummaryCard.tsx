@@ -1,6 +1,6 @@
 import React from 'react';
 import { Activity, Users, TrendingUp, AlertTriangle, LucideIcon } from 'lucide-react';
-import { SUMMARY_TITLES, SUMMARY_DATA } from '../../utils/constants';
+import { SUMMARY_TITLES, SUMMARY_DATA } from '../utils/constants';
 
 type CardVariant = 'primary' | 'success' | 'warning' | 'info';
 

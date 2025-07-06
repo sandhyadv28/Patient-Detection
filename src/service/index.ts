@@ -1,5 +1,6 @@
 import axios from "axios";
 import { APIResponse, get } from "./axios";
+import { URLS } from "./url";
 
 const BASE_URL = "http://localhost:8000/pdd/summary";
 

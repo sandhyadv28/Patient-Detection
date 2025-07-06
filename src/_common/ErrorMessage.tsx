@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import { ErrorMessageProps } from '../modals';
+import { ErrorMessageProps } from '../components/modals';
 
 export default function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
   return (

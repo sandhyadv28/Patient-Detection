@@ -1,5 +1,5 @@
-import { getToken, setToken, removeToken, getRefreshToken, setRefreshToken, removeRefreshToken, getCurrentUser, setCurrentUser, removeCurrentUser } from '../_lib/localStorage.util';
-import { redirectToLogin } from '../config';
+import { getToken, setToken, removeToken, setRefreshToken, removeRefreshToken, setCurrentUser, removeCurrentUser } from './localStorage.util';
+import { redirectToLogin } from './utils';
 
 export function handleLogout() {
   // Set logout event in localStorage to notify other tabs

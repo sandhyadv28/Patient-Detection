@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppDispatch } from '../store/hook';
-import { getToken } from '../_lib/localStorage.util';
-import { redirectToLogin } from '../config';
+import { getToken } from '../utils/localStorage.util';
+import { redirectToLogin } from '../utils/utils';
 
 interface AuthInitializerProps {
   children: React.ReactNode;

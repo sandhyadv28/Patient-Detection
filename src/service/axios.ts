@@ -8,9 +8,9 @@ import axios, {
     getToken,
     setRefreshToken,
     setToken,
-  } from "../_lib/localStorage.util";
+  } from "../utils/localStorage.util";
   import { API } from "./index";
-import { redirectToLogin } from "../config";
+import { redirectToLogin } from "../utils/utils";
   // Create a minimal axios instance with only needed configurations
   export const axiosInstance = axios.create({
     // Use an appropriate base URL or fallback to '/api'

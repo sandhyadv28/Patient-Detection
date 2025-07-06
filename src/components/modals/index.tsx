@@ -88,10 +88,6 @@ export interface ViewToggleProps {
   onViewChange: (view: 'summary' | 'drilldown') => void;
 }
 
-// ============================================================================
-// UI COMPONENT TYPES
-// ============================================================================
-
 export interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   message?: string;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-import { LoadingSpinnerProps } from '../modals';
+import { LoadingSpinnerProps } from '../components/modals';
 
 export default function LoadingSpinner({ size = 'md', message = 'Loading...' }: LoadingSpinnerProps) {
   const sizeClasses = {

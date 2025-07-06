@@ -1,4 +1,4 @@
-import { environments } from './environments';
+import { environments } from '../config/config';
 
 const currentEnv = (import.meta.env.VITE_ENV || "STAGING") as keyof typeof environments;
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { removeToken, removeRefreshToken, removeCurrentUser } from '../_lib/localStorage.util';
-import { redirectToLogin } from '../config';
+import { removeToken, removeRefreshToken, removeCurrentUser } from '../utils/localStorage.util';
+import { redirectToLogin } from '../utils/utils';
 
 export function useStorageListener() {
   useEffect(() => {

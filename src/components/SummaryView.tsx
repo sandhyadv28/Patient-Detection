@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { formatDate } from '../utils/dataGenerator';
-import SummaryCards from './_common/SummaryCard';
-import LoadingSpinner from './_common/LoadingSpinner';
-import ErrorMessage from './_common/ErrorMessage';
+import SummaryCards from '../_common/SummaryCard';
+import LoadingSpinner from '../_common/LoadingSpinner';
+import ErrorMessage from '../_common/ErrorMessage';
 import { useAppDispatch, useAppSelector } from '../store/hook';
 import { fetchPatientSummary, clearError } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';

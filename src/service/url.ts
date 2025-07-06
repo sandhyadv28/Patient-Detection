@@ -1,4 +1,4 @@
-import { config } from '../config';
+import { config } from '../utils/utils';
 import { environment } from '../environments/environment.staging';
 
 // URL constants for API endpoints
