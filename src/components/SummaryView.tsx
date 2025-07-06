@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { formatDate } from '../utils/dataGenerator';
-import SummaryCards from '../_common/SummaryCard';
+import SummaryCard from '../_common/SummaryCard';
 import LoadingSpinner from '../_common/LoadingSpinner';
 import ErrorMessage from '../_common/ErrorMessage';
 import { useAppDispatch, useAppSelector } from '../store/hook';
@@ -87,17 +87,32 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
   const totalPatientDetections = safeSummaryData.reduce((sum, day) => sum + day.detected, 0);
   const totalAmbiguous = safeSummaryData.reduce((sum, day) => sum + day.ambiguous, 0);
 
-  const summaryValues = {
-    totalDays,
-    avgDetectionRate,
-    totalPatientDetections,
-    totalAmbiguous,
-  };
-
   return (
     <div className="space-y-4">
       {/* Key Metrics Cards */}
-      <SummaryCards summaryValues={summaryValues} />
+      <div className="grid grid-cols-4 gap-6">
+        <SummaryCard
+          title="Total Days"
+          value={totalDays}
+          variant="primary"
+        />
+        <SummaryCard
+          title="Avg Detection Rate"
+          value={avgDetectionRate}
+          variant="success"
+          suffix="%"
+        />
+        <SummaryCard
+          title="Total Detections"
+          value={totalPatientDetections}
+          variant="info"
+        />
+        <SummaryCard
+          title="Total Ambiguous"
+          value={totalAmbiguous}
+          variant="warning"
+        />
+      </div>
 
       {/* Summary Table */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">

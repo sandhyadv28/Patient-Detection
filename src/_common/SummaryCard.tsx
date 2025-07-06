@@ -1,93 +1,65 @@
 import React from 'react';
-import { Activity, Users, TrendingUp, AlertTriangle, LucideIcon } from 'lucide-react';
-import { SUMMARY_TITLES, SUMMARY_DATA } from '../utils/constants';
-
-type CardVariant = 'primary' | 'success' | 'warning' | 'info';
+import { Activity, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface SummaryCardProps {
-  readonly title: string;
-  readonly value: number | string;
-  readonly variant: CardVariant;
-  readonly suffix?: string;
-  readonly icon?: LucideIcon;
+  title: string;
+  value: number | string;
+  variant: 'primary' | 'success' | 'warning' | 'info';
+  suffix?: string;
 }
 
-interface SummaryCardsProps {
-  readonly summaryValues: Record<string, number>;
-}
+const SummaryCard: React.FC<SummaryCardProps> = ({ title, value, variant, suffix = '' }) => {
+  const getVariantStyles = () => {
+    switch (variant) {
+      case 'primary':
+        return {
+          icon: Activity,
+          textColor: 'text-blue-600',
+          bgColor: 'bg-blue-100',
+          valueColor: 'text-gray-900'
+        };
+      case 'success':
+        return {
+          icon: TrendingUp,
+          textColor: 'text-green-600',
+          bgColor: 'bg-green-100',
+          valueColor: 'text-green-600'
+        };
+      case 'warning':
+        return {
+          icon: AlertTriangle,
+          textColor: 'text-orange-600',
+          bgColor: 'bg-orange-100',
+          valueColor: 'text-orange-600'
+        };
+      case 'info':
+        return {
+          icon: Users,
+          textColor: 'text-blue-600',
+          bgColor: 'bg-blue-100',
+          valueColor: 'text-blue-600'
+        };
+    }
+  };
 
-// Color theme configuration
-const colorThemes = {
-  blue: { text: 'text-blue-600', bg: 'bg-blue-100' },
-  green: { text: 'text-green-600', bg: 'bg-green-100' },
-  orange: { text: 'text-orange-600', bg: 'bg-orange-100' },
-  gray: { text: 'text-gray-900', bg: 'bg-gray-100' },
-} as const;
-
-// Variant configuration with semantic naming
-const variants = {
-  primary: {
-    ...colorThemes.blue,
-    icon: Activity,
-    valueColor: colorThemes.gray.text,
-  },
-  success: {
-    ...colorThemes.green,
-    icon: TrendingUp,
-  },
-  warning: {
-    ...colorThemes.orange,
-    icon: AlertTriangle,
-  },
-  info: {
-    ...colorThemes.blue,
-    icon: Users,
-  },
-} as const;
-
-function SummaryCard({
-  title,
-  value,
-  variant,
-  suffix = '',
-  icon: CustomIcon,
-}: Readonly<SummaryCardProps>) {
-  const theme = variants[variant];
-  const IconComponent = CustomIcon || theme.icon;
-  const valueColor = 'valueColor' in theme ? theme.valueColor : theme.text;
+  const styles = getVariantStyles();
+  const IconComponent = styles.icon;
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-600 text-sm font-medium mb-1">{title}</p>
-          <p className={`text-3xl font-bold ${valueColor}`}>
+          <p className={`text-3xl font-bold ${styles.valueColor}`}>
             {value}{suffix}
           </p>
         </div>
-        <div className={`p-3 ${theme.bg} rounded-xl`}>
-          <IconComponent className={theme.text} size={24} />
+        <div className={`p-3 ${styles.bgColor} rounded-xl`}>
+          <IconComponent className={styles.textColor} size={24} />
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default function SummaryCards({ summaryValues }: SummaryCardsProps) {
-  return (
-    <div className="grid grid-cols-4 gap-6">
-      {SUMMARY_TITLES.map((title, index) => {
-        const data = SUMMARY_DATA[index];
-        return (
-          <SummaryCard
-            key={data.key}
-            title={title}
-            value={summaryValues[data.key]}
-            variant={data.variant}
-            {...(data.suffix && { suffix: data.suffix })}
-          />
-        );
-      })}
-    </div>
-  );
-} 
+export default SummaryCard; 
