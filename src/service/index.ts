@@ -1,6 +1,6 @@
 import axios from "axios";
 import { APIResponse, get } from "./axios";
-import { URLS, API_CONFIG } from "./url";
+import { API_CONFIG, URLS } from "./url";
 
 
 async function fetchSummaryData({ startDate, endDate }: {
@@ -37,6 +37,21 @@ async function fetchDetailedData(date: string) {
   }
 }
 
+async function fetchPerSlotData(date: string) {
+  try {
+    const response = await axios.get(URLS.PATIENT_PER_SLOT_API, {
+      params: {
+        req_date: date,
+      },
+      headers: API_CONFIG.HEADERS
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching per-slot data:", error);
+    throw error;
+  }
+}
+
 async function getNewToken(refreshToken: string | null) {
   if(!refreshToken) {
     return APIResponse.error("Refresh token is required");
@@ -54,5 +69,6 @@ async function getNewToken(refreshToken: string | null) {
 export const API = {
   fetchSummaryData,
   fetchDetailedData,
+  fetchPerSlotData,
   getNewToken
 };

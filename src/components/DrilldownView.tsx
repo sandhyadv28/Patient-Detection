@@ -1,18 +1,18 @@
-import { Calendar, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import ErrorMessage from '../_common/ErrorMessage';
 import LoadingSpinner from '../_common/LoadingSpinner';
 import { getImageUrl } from '../service/imageApi';
 import { useAppDispatch, useAppSelector } from '../store/hook';
-import { clearError, fetchDetailedDrilldownData } from '../store/slice/patientSlice';
+import { clearError, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
 import { formatDate } from '../utils/dataGenerator';
 
 export default function DrilldownView() {
   const dispatch = useAppDispatch();
   const patientDetailedData = useAppSelector((state: RootState) => state.patient);
-  const { detailedDayData = null, summaryData = null, isLoading = false, error = null } = patientDetailedData || {};
+  const { detailedDayData = null, summaryData = null, isLoading = false, error = null, perSlotDetailedData = null, isPerSlotLoading = false } = patientDetailedData || {};
 
   const [activeDay, setActiveDay] = useState(0);
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
@@ -46,14 +46,30 @@ export default function DrilldownView() {
     }
   };
 
-  const toggleSlotExpansion = (timeSlot: string) => {
+  const toggleSlotExpansion = async (timeSlot: string, slotKey: string) => {
     const newExpanded = new Set(expandedSlots);
-    if (newExpanded.has(timeSlot)) {
-      newExpanded.delete(timeSlot);
-    } else {
+    const isExpanding = !newExpanded.has(timeSlot);
+
+    if (isExpanding) {
+      // Add to expanded slots
       newExpanded.add(timeSlot);
+      setExpandedSlots(newExpanded);
+
+      // Get the selected date
+      let selectedDate = '';
+      if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
+        selectedDate = summaryData.daily_breakdown[activeDay].date;
+      } else {
+        selectedDate = moment().subtract(12 - activeDay, 'days').format('YYYY-MM-DD');
+      }
+
+      // Call the per-slot API
+      dispatch(fetchPerSlotDetailedData({ date: selectedDate, slotKey }));
+    } else {
+      // Remove from expanded slots
+      newExpanded.delete(timeSlot);
+      setExpandedSlots(newExpanded);
     }
-    setExpandedSlots(newExpanded);
   };
 
   const handleViewPhoto = async (imageKey: string) => {
@@ -213,7 +229,7 @@ export default function DrilldownView() {
                     </div>
                   </div>
                   <button
-                    onClick={() => toggleSlotExpansion(slotInfo.label)}
+                    onClick={(e) => { e.stopPropagation(); toggleSlotExpansion(slotInfo.label, slotKey); }}
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-gray-700 hover:bg-gray-100 transition-all border border-gray-200"
                   >
                     {expandedSlots.has(slotInfo.label) ? (
@@ -258,47 +274,80 @@ export default function DrilldownView() {
                 <div className="border-t border-gray-200">
                   <div className="p-6">
                     <h5 className="text-lg font-semibold text-gray-900 mb-4">Bed Details</h5>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                              Bed No.
-                            </th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                              Detection Status
-                            </th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                              View Photo
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {Array.from({ length: slotInfo.total_entries }, (_, index) => {
-                            const isDetected = index < slotInfo.total_detections;
-                            return (
-                              <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    Bed {index + 1}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-center">
-                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(isDetected ? 'Yes' : 'No')}`}>
-                                    {isDetected ? 'Yes' : 'No'}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-center">
-                                  <span className="text-gray-400 text-sm">
-                                    No photo available
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    {isPerSlotLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <LoadingSpinner size="md" message="Loading bed details..." />
+                      </div>
+                    ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
+                      (() => {
+                        // Find the slot data for the current slotKey
+                        const dayData = perSlotDetailedData[0];
+                        const slotData = dayData[slotKey];
+                        
+                        if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
+                          return (
+                            <div className="overflow-x-auto">
+                              <table className="w-full">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                      Bed No.
+                                    </th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                      Detection Status
+                                    </th>
+                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                      View Photo
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                  {slotData.per_bed.map((bed, index) => (
+                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                      <td className="px-4 py-3 whitespace-nowrap">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                          Bed {bed.bed_no}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(bed.detection_status ? 'Yes' : 'No')}`}>
+                                          {bed.detection_status ? 'Yes' : 'No'}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                                        {bed.imageURL ? (
+                                          <button
+                                            onClick={() => handleViewPhoto(bed.imageURL!)}
+                                            className="inline-flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-700 transition-colors"
+                                          >
+                                            <Eye size={14} />
+                                            View Photo
+                                          </button>
+                                        ) : (
+                                          <span className="text-gray-400 text-sm">
+                                            No photo available
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="text-center py-8">
+                              <p className="text-gray-600">No bed details available for this time slot.</p>
+                            </div>
+                          );
+                        }
+                      })()
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">No bed details available for this time slot.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

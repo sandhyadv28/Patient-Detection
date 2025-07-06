@@ -112,11 +112,30 @@ interface DetailedResponse {
   }>;
 }
 
+interface PerSlotDetailedDay {
+  [key: string]: {
+    label: string;
+    overall: {
+      total_entries: number;
+      total_detections: number;
+      total_undetected: number;
+      detection_rate: number;
+      undetected_rate: number;
+    };
+    per_bed: Array<{
+      detection_status: boolean;
+      imageURL: string | null;
+      last_updated: string;
+      bed_no: string;
+    }>;
+  } | undefined;
+}
+
 interface PatientState {
   summaryData: SummaryResponse | null;
   dayData: DayData[];
   detailedDayData: DetailedResponse['data'] | null;
-  perSlotDetailedData: DayData | null;
+  perSlotDetailedData: PerSlotDetailedDay[] | null;
   isLoading: boolean;
   isPerSlotLoading: boolean;
   error: string | null;
