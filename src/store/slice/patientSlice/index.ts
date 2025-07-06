@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DayData, SummaryData } from "../../../components/modals";
 import { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
+import { createSetState } from "../../utility";
 
 interface PatientState {
   summaryData: SummaryData[];
@@ -35,63 +36,74 @@ const patientSlice = createSlice({
     clearPerSlotDetailedData: (state) => {
       state.perSlotDetailedData = null;
     },
+    setSummaryData: createSetState<'summaryData', PatientState>('summaryData'),
+    setDayData: createSetState<'dayData', PatientState>('dayData'),
+    setDetailedDayData: createSetState<'detailedDayData', PatientState>('detailedDayData'),
+    setPerSlotDetailedData: createSetState<'perSlotDetailedData', PatientState>('perSlotDetailedData'),
+    setLoading: createSetState<'isLoading', PatientState>('isLoading'),
+    setPerSlotLoading: createSetState<'isPerSlotLoading', PatientState>('isPerSlotLoading'),
+    setError: createSetState<'error', PatientState>('error'),
   },
   extraReducers: (builder) => {
+    // Handle fetchPatientSummary
     builder
       .addCase(fetchPatientSummary.pending, (state) => {
-        console.log('=== Redux: fetchPatientSummary.pending ===');
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchPatientSummary.fulfilled, (state, action: PayloadAction<SummaryData[]>) => {
-        console.log('=== Redux: fetchPatientSummary.fulfilled ===');
-        console.log('Received data:', action.payload);
+      .addCase(fetchPatientSummary.fulfilled, (state, action) => {
         state.isLoading = false;
         state.summaryData = action.payload;
         state.error = null;
       })
       .addCase(fetchPatientSummary.rejected, (state, action) => {
-        console.log('=== Redux: fetchPatientSummary.rejected ===');
-        console.error('Redux error:', action.error);
         state.isLoading = false;
-        state.error = action.error.message || "Failed to fetch patient summary";
+        state.error = action.error.message || 'Failed to fetch patient summary';
       })
+      
+      // Handle fetchDetailedDrilldownData
       .addCase(fetchDetailedDrilldownData.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchDetailedDrilldownData.fulfilled, (state, action: PayloadAction<DayData>) => {
+      .addCase(fetchDetailedDrilldownData.fulfilled, (state, action) => {
         state.isLoading = false;
         state.detailedDayData = action.payload;
-        state.dayData = [action.payload];
         state.error = null;
       })
       .addCase(fetchDetailedDrilldownData.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || "Failed to fetch detailed drilldown data";
+        state.error = action.error.message || 'Failed to fetch detailed data';
       })
+      
+      // Handle fetchPerSlotDetailedData
       .addCase(fetchPerSlotDetailedData.pending, (state) => {
-        console.log('=== Redux: fetchPerSlotDetailedData.pending ===');
         state.isPerSlotLoading = true;
         state.error = null;
       })
-      .addCase(fetchPerSlotDetailedData.fulfilled, (state, action: PayloadAction<DayData>) => {
-        console.log('=== Redux: fetchPerSlotDetailedData.fulfilled ===');
-        console.log('Received per-slot data:', action.payload);
-        console.log('Records count:', action.payload.records.length);
+      .addCase(fetchPerSlotDetailedData.fulfilled, (state, action) => {
         state.isPerSlotLoading = false;
         state.perSlotDetailedData = action.payload;
         state.error = null;
       })
       .addCase(fetchPerSlotDetailedData.rejected, (state, action) => {
-        console.log('=== Redux: fetchPerSlotDetailedData.rejected ===');
-        console.error('Per-slot Redux error:', action.error);
         state.isPerSlotLoading = false;
-        state.error = action.error.message || "Failed to fetch per-slot detailed data";
+        state.error = action.error.message || 'Failed to fetch per-slot data';
       });
   },
 });
 
-export const { clearError, clearDetailedData, clearPerSlotDetailedData } = patientSlice.actions;
+export const { 
+  clearError, 
+  clearDetailedData, 
+  clearPerSlotDetailedData, 
+  setSummaryData, 
+  setDayData, 
+  setDetailedDayData, 
+  setPerSlotDetailedData, 
+  setLoading, 
+  setPerSlotLoading, 
+  setError 
+} = patientSlice.actions;
 export { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
 export default patientSlice.reducer;
