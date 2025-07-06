@@ -41,7 +41,7 @@ export default function DrilldownView() {
     if (selectedDate) {
       dispatch(fetchDetailedDrilldownData(selectedDate));
     } else {
-      const calculatedDate = moment().subtract(6 - dayIndex, 'days').format('YYYY-MM-DD');
+      const calculatedDate = moment().subtract(12 - dayIndex, 'days').format('YYYY-MM-DD');
       dispatch(fetchDetailedDrilldownData(calculatedDate));
     }
   };
@@ -132,7 +132,7 @@ export default function DrilldownView() {
   if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
     selectedDate = summaryData.daily_breakdown[activeDay].date;
   } else {
-    selectedDate = moment().subtract(6 - activeDay, 'days').format('YYYY-MM-DD');
+    selectedDate = moment().subtract(12 - activeDay, 'days').format('YYYY-MM-DD');
   }
 
   const getStatusColor = (status: string) => {
