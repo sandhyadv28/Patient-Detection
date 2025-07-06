@@ -1,33 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { DayData, DetectionRecord } from "../../../components/modals";
 import moment from 'moment-timezone';
+import { DayData, DetectionRecord } from "../../../components/modals";
 import { environment } from '../../../environments/environment.staging';
-import { URLS, API_CONFIG } from '../../../service/url';
+import { API } from '../../../service';
+import { API_CONFIG } from '../../../service/url';
 
-interface MockiData {
-  status: string;
-  data: {
-    overall_summary: {
-      hospital: string;
-      hospital_unit: string;
-      total_entries: number;
-      total_detections: number;
-      total_undetected: number;
-      detection_rate: number;
-      undetected_rate: number;
-    };
-    daily_breakdown: Array<{
-      date: string;
-      hospital: string;
-      hospital_unit: string;
-      total_entries: number;
-      total_detections: number;
-      total_undetected: number;
-      detection_rate: number;
-      undetected_rate: number;
-    }>;
-  };
-}
+
 
 interface DetailedDrilldownResponse {
   status: string;
@@ -139,69 +117,98 @@ interface PerSlotDetailedResponse {
   data: PerSlotDetailedDay[];
 }
 
+interface DailyBreakdown {
+  date: string;
+  hospital: string;
+  hospital_unit: string;
+  total_entries: number;
+  total_detections: number;
+  total_undetected: number;
+  detection_rate: number;
+  undetected_rate: number;
+}
+
+interface ApiResponse {
+  status: string;
+  data: {
+    overall_summary: {
+      hospital: string;
+      hospital_unit: string;
+      total_entries: number;
+      total_detections: number;
+      total_undetected: number;
+      detection_rate: number;
+      undetected_rate: number;
+    };
+    daily_breakdown: DailyBreakdown[];
+  };
+}
+
+interface SummaryData {
+  date: string;
+  totalBeds: number;
+  detected: number;
+  notDetected: number;
+  ambiguous: number;
+  detectedPercentage: number;
+  notDetectedPercentage: number;
+  ambiguousPercentage: number;
+}
+
+interface SummaryDataWithHospital extends SummaryData {
+  hospital: string;
+  hospitalUnit: string;
+}
+
 export const fetchPatientSummary = createAsyncThunk(
   "patient/fetchPatientSummary",
-  async ({ startDate, endDate }: { startDate: string; endDate: string }) => {
+  async ({ startDate, endDate }: { startDate: string; endDate: string }, { dispatch }) => {
     try {
       // Convert dates to ISO format with specific time (9:04 PM IST = 15:34:07 UTC) for API compatibility
       const startDateISO = moment(startDate).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
       const endDateISO = moment(endDate).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
       
-      console.log('Time conversion:');
-      console.log('UTC time sent to API:', { startDateISO, endDateISO });
-      console.log('IST time (9:04 PM):', {
-        start: moment(startDateISO).tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss A'),
-        end: moment(endDateISO).tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss A')
-      });
+      // Use API service instead of direct fetch
+      const response = await API.fetchSummaryData({
+        startDate: startDateISO,
+        endDate: endDateISO
+      }) as ApiResponse;
       
-      // Build URL using environment configuration and URL service
-      const url = `${environment.apiUrl}pdd/summary?start_date=${startDateISO}&end_date=${endDateISO}`;
+      console.log('API Response:', response);
       
-      console.log('=== API Call Details ===');
-      console.log('Input dates:', { startDate, endDate });
-      console.log('ISO dates:', { startDateISO, endDateISO });
-      console.log('API URL:', url);
-      console.log('Environment:', environment);
+      // Transform the response to match SummaryData[] interface
+      let summaryData: SummaryDataWithHospital[] = [];
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: API_CONFIG.HEADERS,
-      });
-      
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error response:', errorText);
-        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      if (response?.status === 'success' && response.data?.daily_breakdown) {
+        summaryData = response.data.daily_breakdown.map((day: DailyBreakdown) => ({
+          date: day.date,
+          totalBeds: day.total_entries,
+          detected: day.total_detections,
+          notDetected: day.total_undetected,
+          ambiguous: 0, // API doesn't provide ambiguous data
+          detectedPercentage: Math.round(day.detection_rate),
+          notDetectedPercentage: Math.round(day.undetected_rate),
+          ambiguousPercentage: 0, // API doesn't provide ambiguous data
+          hospital: day.hospital,
+          hospitalUnit: day.hospital_unit
+        }));
+      } else {
+        console.warn('Unexpected API response format:', response);
+        summaryData = [];
       }
       
-      const data: MockiData = await response.json();
-      console.log('API Response data:', data);
+      console.log('Transformed data:', summaryData);
+      return summaryData;
       
-      // Transform Mocki data to match SummaryData interface
-      const transformedData = data.data.daily_breakdown.map(day => ({
-        date: day.date,
-        totalBeds: day.total_entries,
-        detected: day.total_detections,
-        notDetected: day.total_undetected,
-        ambiguous: 0, // API doesn't provide ambiguous data
-        detectedPercentage: Math.round(day.detection_rate),
-        notDetectedPercentage: Math.round(day.undetected_rate),
-        ambiguousPercentage: 0, // API doesn't provide ambiguous data
-      }));
-      
-      console.log('Transformed data:', transformedData);
-      return transformedData;
     } catch (error) {
-      console.error('=== API Call Error ===');
-      console.error('Error details:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error: Unable to connect to the API server. Please check your internet connection.');
-      }
-      throw error;
+      console.error('API Call Error:', error);
+      const errorMessage = error instanceof TypeError && error.message.includes('fetch')
+        ? 'Network error: Unable to connect to the API server. Please check your internet connection.'
+        : error instanceof Error 
+          ? error.message 
+          : 'Failed to fetch patient summary';
+      
+      throw new Error(errorMessage);
     }
   }
 );
@@ -224,7 +231,6 @@ export const fetchDetailedDrilldownData = createAsyncThunk(
       const url = `${environment.apiUrl}pdd/detailed/overall?req_date=${dateISO}`;
       
       console.log('API URL:', url);
-      console.log('Environment:', environment);
       
       const response = await fetch(url, {
         method: 'GET',

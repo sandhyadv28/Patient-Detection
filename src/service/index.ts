@@ -1,27 +1,19 @@
 import axios from "axios";
 import { APIResponse, get } from "./axios";
-import { URLS } from "./url";
+import { URLS, API_CONFIG } from "./url";
 
-const BASE_URL = "http://localhost:8000/pdd/summary";
 
-async function fetchSummaryData({ startDate, endDate, hospital, unit, apiKey }: {
+async function fetchSummaryData({ startDate, endDate }: {
   startDate: string,
-  endDate: string,
-  hospital: string,
-  unit: string,
-  apiKey: string
+  endDate: string
 }) {
   try {
-    const response = await axios.get(BASE_URL, {
+    const response = await axios.get(URLS.PATIENT_SUMMARY_API, {
       params: {
         start_date: startDate,
         end_date: endDate,
       },
-      headers: {
-        "ai-api-key": apiKey,
-        "hospital-name": hospital,
-        "hospital-unit": unit,
-      }
+      headers: API_CONFIG.HEADERS
     });
     return response.data;
   } catch (error) {
