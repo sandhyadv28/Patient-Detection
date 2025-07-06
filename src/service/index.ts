@@ -1,4 +1,5 @@
 import axios from "axios";
+import { APIResponse, get } from "./axios";
 
 const BASE_URL = "http://localhost:8000/pdd/summary";
 
@@ -28,6 +29,21 @@ async function fetchSummaryData({ startDate, endDate, hospital, unit, apiKey }: 
   }
 }
 
+async function getNewToken(refreshToken: string | null) {
+  if(!refreshToken) {
+    return APIResponse.error("Refresh token is required");
+  }
+
+  try {
+    const data = await get(`${URLS.GET_NEW_TOKEN}?x-refresh-token=${refreshToken}`);
+    return APIResponse.success<any>(data);
+  } catch (error) {
+    console.error("Error while fetching new token", error);
+    return APIResponse.error(error);
+  }
+}
+
 export const API = {
   fetchSummaryData,
+  getNewToken
 };

@@ -6,9 +6,11 @@ import Header from './components/Layout/Header';
 import LandingPage from './components/Layout/LandingPage';
 import ViewToggle from './components/Layout/ViewToggle';
 import SummaryView from './components/SummaryView';
+import AuthInitializer from './components/AuthInitializer';
 import { ViewType } from './components/modals';
 import { useAuth } from './hooks/useAuth';
 import { usePatientData } from './hooks/usePatientData';
+import { useStorageListener } from './hooks/useStorageListener';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('summary');
@@ -25,6 +27,9 @@ function App() {
     handlePresetChange,
   } = usePatientData();
 
+  // Listen for logout events from other tabs
+  useStorageListener();
+
   // Create dateRange string for API
   const dateRange = preset;
 
@@ -40,44 +45,46 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        user={user}
-        onLogout={handleLogout}
-        summaryData={summaryData}
-        dayData={dayData}
-      />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Date Range Picker */}
-        <div className="mb-4">
-          <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onDateRangeChange={handleDateRangeChange}
-            preset={preset}
-            onPresetChange={handlePresetChange}
-          />
-        </div>
-
-        {/* View Toggle */}
-        <ViewToggle
-          currentView={currentView}
-          onViewChange={setCurrentView}
+    <AuthInitializer>
+      <div className="min-h-screen bg-gray-50">
+        <Header
+          user={user}
+          summaryData={summaryData}
+          dayData={dayData}
+          onLogout={handleLogout}
         />
 
-        {/* Main Content */}
-        <main>
-          {currentView === 'summary' ? (
-            <SummaryView startDate={startDate} endDate={endDate} preset={preset} />
-          ) : (
-            <DrilldownView />
-          )}
-        </main>
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Date Range Picker */}
+          <div className="mb-4">
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onDateRangeChange={handleDateRangeChange}
+              preset={preset}
+              onPresetChange={handlePresetChange}
+            />
+          </div>
 
-        <Footer />
+          {/* View Toggle */}
+          <ViewToggle
+            currentView={currentView}
+            onViewChange={setCurrentView}
+          />
+
+          {/* Main Content */}
+          <main>
+            {currentView === 'summary' ? (
+              <SummaryView startDate={startDate} endDate={endDate} preset={preset} />
+            ) : (
+              <DrilldownView />
+            )}
+          </main>
+
+          <Footer />
+        </div>
       </div>
-    </div>
+    </AuthInitializer>
   );
 }
 

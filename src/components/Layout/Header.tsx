@@ -1,10 +1,9 @@
-import React from 'react';
 import { Activity, Database } from 'lucide-react';
-import { User, HeaderProps } from '../modals';
 import ExportButton from '../ExportButton';
+import { HeaderProps } from '../modals';
 import UserProfile from '../UserProfile';
 
-export default function Header({ user, onLogout, summaryData, dayData }: HeaderProps) {
+export default function Header({ user, summaryData, dayData, onLogout }: HeaderProps & { onLogout: () => void }) {
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -12,19 +11,19 @@ export default function Header({ user, onLogout, summaryData, dayData }: HeaderP
           <div className="flex items-center gap-8">
             {/* Company Logos */}
             <div className="flex items-center gap-6">
-              <img 
-                src="/public/1661340002652.jpeg" 
-                alt="NephroPlus" 
+              <img
+                src="/public/1661340002652.jpeg"
+                alt="NephroPlus"
                 className="h-10 object-contain"
               />
               <div className="w-px h-8 bg-gray-300"></div>
-              <img 
-                src="/public/images (2).png" 
-                alt="Cloudphysician" 
+              <img
+                src="/public/images (2).png"
+                alt="Cloudphysician"
                 className="h-10 object-contain"
               />
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-xl">
                 <Activity className="text-blue-600" size={24} />
@@ -37,7 +36,7 @@ export default function Header({ user, onLogout, summaryData, dayData }: HeaderP
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <ExportButton summaryData={summaryData} dayData={dayData} />
             <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl border border-green-200">

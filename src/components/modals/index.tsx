@@ -69,7 +69,6 @@ export interface AuthFormData {
 
 export interface HeaderProps {
   user: User;
-  onLogout: () => void;
   summaryData: SummaryData[];
   dayData: DayData[];
 }
