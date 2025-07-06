@@ -25,7 +25,7 @@ src/
 │   │   ├── Header.tsx
 │   │   ├── Footer.tsx
 │   │   ├── LandingPage.tsx
-│   │   └── ViewToggle.tsx
+│   │   └── AnalysisTabs.tsx
 │   ├── UI/              # Reusable UI components
 │   │   ├── LoadingSpinner.tsx
 │   │   └── ErrorMessage.tsx
@@ -55,7 +55,7 @@ src/
 - `useAuth`: Handles authentication state and user management
 
 #### 2. **Component Separation**
-- **Layout Components**: Header, Footer, LandingPage, ViewToggle
+- **Layout Components**: Header, Footer, LandingPage, AnalysisTabs
 - **UI Components**: LoadingSpinner, ErrorMessage for consistent user experience
 - **Business Components**: SummaryView, DrilldownView for specific functionality
 

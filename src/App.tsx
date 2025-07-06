@@ -4,7 +4,7 @@ import DrilldownView from './components/DrilldownView';
 import Footer from './components/Layout/Footer';
 import Header from './components/Layout/Header';
 import LandingPage from './components/Layout/LandingPage';
-import ViewToggle from './components/Layout/ViewToggle';
+import ViewToggle from './components/Layout/AnalysisTabs';
 import SummaryView from './components/SummaryView';
 import AuthInitializer from './components/AuthInitializer';
 import { ViewType } from './components/modals';

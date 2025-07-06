@@ -1,7 +1,7 @@
 import React from 'react';
-import { ViewToggleProps, ViewType } from '../modals';
+import { AnalysisTabsProps } from '../modals';
 
-export default function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
+export default function AnalysisTabs({ currentView, onViewChange }: AnalysisTabsProps) {
   return (
     <div className="mb-4">
       <nav className="flex bg-gray-100 p-1 rounded-xl">

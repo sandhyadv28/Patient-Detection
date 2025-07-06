@@ -83,7 +83,7 @@ export interface LandingPageProps {
   onShowAuthModal: (show: boolean) => void;
 }
 
-export interface ViewToggleProps {
+export interface AnalysisTabsProps {
   currentView: 'summary' | 'drilldown';
   onViewChange: (view: 'summary' | 'drilldown') => void;
 }

@@ -16,5 +16,6 @@ export const API_CONFIG = {
 // URL constants for API endpoints
 export const URLS = {
     PATIENT_SUMMARY_API: `${environment.apiUrl}pdd/summary`,
+    PATIENT_DETAILED_API: `${environment.apiUrl}pdd/detailed/overall`,
     GET_NEW_TOKEN: `${config.CLOUDPHYSICIAN_LOGIN_SERVICE}api/users/requestAccessToken`,
 }
