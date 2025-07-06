@@ -16,8 +16,6 @@ export default function DateRangePicker({
   const dispatch = useAppDispatch();
 
   const handlePresetClick = (newPreset: DatePreset) => {
-    console.log('=== DateRangePicker: Preset clicked ===');
-    console.log('Preset clicked:', newPreset);
     onPresetChange(newPreset);
 
     if (newPreset !== 'custom') {
@@ -28,21 +26,11 @@ export default function DateRangePicker({
       const startDateStr = start.format('YYYY-MM-DD');
       const endDateStr = adjustedEnd.format('YYYY-MM-DD');
 
-      console.log('Calculated date range:', { startDateStr, endDateStr });
-      console.log('Date objects (Local time):', {
-        start: start.format(),
-        end: adjustedEnd.format()
-      });
-
-      // ⬇️ Use adjusted end date
       onDateRangeChange(startDateStr, endDateStr);
     }
   };
 
   const handleCustomDateChange = (field: DateField, value: string) => {
-    console.log('=== Custom date change ===');
-    console.log('Field:', field, 'Value:', value);
-    console.log('Current dates:', { startDate, endDate });
     
     let newStartDate = startDate;
     let newEndDate = endDate;
@@ -59,7 +47,6 @@ export default function DateRangePicker({
     
     // If both dates are selected, trigger API call
     if (newStartDate && newEndDate) {
-      console.log('✅ Both dates selected, triggering API call:', { newStartDate, newEndDate });
       dispatch(fetchPatientSummary({ startDate: newStartDate, endDate: newEndDate }));
     } else {
       console.log('⏳ Waiting for both dates to be selected...');

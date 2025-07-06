@@ -189,17 +189,7 @@ export const fetchDetailedDrilldownData = createAsyncThunk(
     try {
       const dateISO = moment(date).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
       
-      console.log('=== Detailed Drilldown API Call ===');
-      console.log('Input date:', date);
-      console.log('ISO date:', dateISO);
-      
       const response = await API.fetchDetailedData(dateISO);
-      
-      console.log('=== Detailed API Response ===');
-      console.log('Full response:', response);
-      console.log('Response data:', response.data);
-      console.log('Response status:', response.status);
-      
       return response.data;
       
     } catch (error) {
@@ -232,7 +222,6 @@ export const fetchPerSlotDetailedData = createAsyncThunk(
         throw new Error(`API request failed with status ${response.status}: ${errorText}`);
       }
       const data: PerSlotDetailedResponse = await response.json();
-      console.log('Per-Slot API Response data:', data);
       
       // Find the slot data for the requested slotKey
       let slotData = null;

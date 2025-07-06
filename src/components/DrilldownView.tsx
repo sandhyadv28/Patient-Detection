@@ -1,18 +1,18 @@
-import { Calendar, ChevronDown, ChevronRight, ExternalLink, Eye } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import moment from 'moment';
 import { useEffect, useState } from 'react';
+import ErrorMessage from '../_common/ErrorMessage';
+import LoadingSpinner from '../_common/LoadingSpinner';
+import { getImageUrl } from '../service/imageApi';
 import { useAppDispatch, useAppSelector } from '../store/hook';
 import { clearError, fetchDetailedDrilldownData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
 import { formatDate } from '../utils/dataGenerator';
-import { getImageUrl } from '../service/imageApi';
-import ErrorMessage from '../_common/ErrorMessage';
-import LoadingSpinner from '../_common/LoadingSpinner';
-import moment from 'moment';
 
 export default function DrilldownView() {
   const dispatch = useAppDispatch();
   const patientDetailedData = useAppSelector((state: RootState) => state.patient);
-  const { detailedDayData = null, isLoading = false, error = null } = patientDetailedData || {};
+  const { detailedDayData = null, summaryData = null, isLoading = false, error = null } = patientDetailedData || {};
 
   const [activeDay, setActiveDay] = useState(0);
   const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
@@ -22,7 +22,6 @@ export default function DrilldownView() {
 
   // Fetch detailed data when component mounts
   useEffect(() => {
-    console.log('Fetching detailed data for today');
     dispatch(fetchDetailedDrilldownData(moment().format('YYYY-MM-DD')));
   }, [dispatch]);
 
@@ -34,17 +33,16 @@ export default function DrilldownView() {
   const handleDayClick = (dayIndex: number) => {
     setActiveDay(dayIndex);
 
-    // Get the date for the selected day from the first slot object
-    const selectedDayObj = days[dayIndex] || {};
-    const firstSlot = Object.values(selectedDayObj)[0] as any;
-    const selectedDate = firstSlot?.date;
+    let selectedDate = '';
+    if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > dayIndex) {
+      selectedDate = summaryData.daily_breakdown[dayIndex].date;
+    }
+
     if (selectedDate) {
-      console.log(`Fetching detailed data for day ${dayIndex + 1} with date: ${selectedDate}`);
       dispatch(fetchDetailedDrilldownData(selectedDate));
     } else {
-      // If no specific date, use today's date
-      console.log('Fetching detailed data for today');
-      dispatch(fetchDetailedDrilldownData(moment().format('YYYY-MM-DD')));
+      const calculatedDate = moment().subtract(6 - dayIndex, 'days').format('YYYY-MM-DD');
+      dispatch(fetchDetailedDrilldownData(calculatedDate));
     }
   };
 
@@ -67,7 +65,7 @@ export default function DrilldownView() {
     setPhotoModal('loading');
     setIsImageLoading(true);
     setImageError(null);
-    
+
     try {
       const imageUrl = await getImageUrl(imageKey);
       setPhotoModal(imageUrl);
@@ -98,7 +96,6 @@ export default function DrilldownView() {
 
   // Show empty state
   if (!detailedDayData) {
-    console.log('No detailed day data available');
     return (
       <div className="flex flex-col items-center justify-center p-8">
         <p className="text-gray-600 text-center">No drilldown data available.</p>
@@ -107,7 +104,6 @@ export default function DrilldownView() {
   }
 
   if (!Array.isArray(detailedDayData) || detailedDayData.length === 0) {
-    console.log('Detailed day data is not an array or is empty');
     return (
       <div className="flex flex-col items-center justify-center p-8">
         <p className="text-gray-600 text-center">No drilldown data available.</p>
@@ -127,17 +123,17 @@ export default function DrilldownView() {
     'slot_eight',
   ];
 
-  // For multiple days, detailedDayData is an array of day objects
-  // Each day object is an object with slot keys and a 'date' property
   type SlotData = { label?: string; overall?: { total_entries?: number; total_detections?: number; total_undetected?: number; detection_rate?: number; undetected_rate?: number } };
   type DayObj = { [key: string]: SlotData };
   const days: DayObj[] = (detailedDayData || []).slice(0, 7);
-  // Flatten the array of slot objects into a single object
   const selectedDayObj: DayObj = Object.assign({}, ...days);
 
-  // Get the date for the selected day from the first slot object
-  const firstSlot = Object.values(selectedDayObj)[0] as any;
-  const selectedDate = firstSlot?.date || '';
+  let selectedDate = '';
+  if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
+    selectedDate = summaryData.daily_breakdown[activeDay].date;
+  } else {
+    selectedDate = moment().subtract(6 - activeDay, 'days').format('YYYY-MM-DD');
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,7 +175,7 @@ export default function DrilldownView() {
 
         <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
           <p className="text-blue-800 font-medium">
-            Selected: {selectedDate ? formatDate(selectedDate) : formatDate(moment().format('YYYY-MM-DD'))}
+            Selected: {formatDate(selectedDate)}
           </p>
         </div>
       </div>
@@ -199,7 +195,6 @@ export default function DrilldownView() {
           };
 
           // Debug logs for label issue
-          console.log('Slot Debug:', { slotKey, slotData, label, slotInfoLabel: slotInfo.label });
 
           return (
             <div key={slotKey} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -327,7 +322,7 @@ export default function DrilldownView() {
                 ×
               </button>
             </div>
-            
+
             <div className="w-full h-80 flex items-center justify-center">
               {photoModal === 'loading' || isImageLoading ? (
                 <div className="flex items-center justify-center">

@@ -35,11 +35,6 @@ export const fetchPatientImage = async (imageKey: string): Promise<string> => {
     const encodedImageKey = encodeURIComponent(imageKey);
     const url = `${IMAGE_API_CONFIG.BASE_URL}pdd/detailed/per-slot/image?image_key=${encodedImageKey}`;
     
-    console.log('Fetching image from:', url);
-    console.log('Image key:', imageKey);
-    console.log('Encoded image key:', encodedImageKey);
-    console.log('Request headers:', IMAGE_API_CONFIG.HEADERS);
-    
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -48,9 +43,6 @@ export const fetchPatientImage = async (imageKey: string): Promise<string> => {
         'hospital-unit': 'ICU',
       },
     });
-
-    console.log('Image API Response status:', response.status);
-    console.log('Image API Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -66,20 +58,16 @@ export const fetchPatientImage = async (imageKey: string): Promise<string> => {
 
     // Check if response is an image
     const contentType = response.headers.get('content-type');
-    console.log('Content-Type:', contentType);
     
     if (contentType && contentType.startsWith('image/')) {
-      // Response is a direct image, convert to blob URL
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
-      console.log('Created blob URL for image:', blobUrl);
       return blobUrl;
     }
 
     // If it's JSON response with image data
     try {
       const data: ImageApiResponse = await response.json();
-      console.log('Image API JSON response:', data);
       
       if (data.success && (data.data || (data as any).url)) {
         return data.data || (data as any).url;
@@ -109,7 +97,6 @@ export const fetchPatientImage = async (imageKey: string): Promise<string> => {
  */
 export const getImageUrl = async (imageKey: string): Promise<string> => {
   try {
-    console.log('Getting image URL for key:', imageKey);
     const imageData = await fetchPatientImage(imageKey);
     
     // If it's already a URL (blob URL or http), return it

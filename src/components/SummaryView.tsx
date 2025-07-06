@@ -25,7 +25,6 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
 
   useEffect(() => {
     if (startDate && endDate && preset !== 'custom') {
-      console.log('Fetching patient summary for date range:', { startDate, endDate });
       dispatch(fetchPatientSummary({ startDate, endDate }));
     }
   }, [dispatch, startDate, endDate, preset]);
