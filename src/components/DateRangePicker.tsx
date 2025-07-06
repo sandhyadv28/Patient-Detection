@@ -48,8 +48,6 @@ export default function DateRangePicker({
     // If both dates are selected, trigger API call
     if (newStartDate && newEndDate) {
       dispatch(fetchPatientSummary({ startDate: newStartDate, endDate: newEndDate }));
-    } else {
-      console.log('⏳ Waiting for both dates to be selected...');
     }
   };
 
