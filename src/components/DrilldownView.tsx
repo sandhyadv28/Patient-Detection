@@ -3,7 +3,7 @@ import moment from 'moment';
 import { useEffect, useState } from 'react';
 import ErrorMessage from '../_common/ErrorMessage';
 import LoadingSpinner from '../_common/LoadingSpinner';
-import { getImageUrl } from '../service/imageApi';
+import { API } from '../service';
 import { useAppDispatch, useAppSelector } from '../store/hook';
 import { clearError, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
@@ -83,7 +83,7 @@ export default function DrilldownView() {
     setImageError(null);
 
     try {
-      const imageUrl = await getImageUrl(imageKey);
+      const imageUrl = await API.fetchPatientImage(imageKey);
       setPhotoModal(imageUrl);
     } catch (error) {
       setImageError(error instanceof Error ? error.message : 'Failed to load image');
@@ -94,9 +94,6 @@ export default function DrilldownView() {
   };
 
   const handleClosePhotoModal = () => {
-    if (photoModal && photoModal.startsWith('blob:')) {
-      URL.revokeObjectURL(photoModal);
-    }
     setPhotoModal(null);
   };
 
@@ -283,7 +280,7 @@ export default function DrilldownView() {
                         // Find the slot data for the current slotKey
                         const dayData = perSlotDetailedData[0];
                         const slotData = dayData[slotKey];
-                        
+
                         if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
                           return (
                             <div className="overflow-x-auto">
@@ -394,7 +391,10 @@ export default function DrilldownView() {
                     src={photoModal}
                     alt="Patient detection"
                     className="w-full h-full rounded-xl shadow-lg"
-                    onError={() => setImageError('Failed to load image')}
+                    onLoad={() => {}}
+                    onError={(e) => {
+                      setImageError('Failed to load image');
+                    }}
                   />
                   <div className="mt-4 flex justify-between items-center">
                     <p className="text-sm text-gray-500">Click outside to close</p>

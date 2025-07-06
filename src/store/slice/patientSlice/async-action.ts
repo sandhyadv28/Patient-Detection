@@ -180,8 +180,6 @@ export const fetchDetailedDrilldownData = createAsyncThunk(
       return response.data;
       
     } catch (error) {
-      console.error('=== Detailed API Error ===');
-      console.error('Error details:', error);
       const errorMessage = error instanceof TypeError && error.message.includes('fetch')
         ? 'Network error: Unable to connect to the API server. Please check your internet connection.'
         : error instanceof Error 

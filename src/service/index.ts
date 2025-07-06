@@ -1,6 +1,6 @@
 import axios from "axios";
-import { APIResponse, get } from "./axios";
-import { API_CONFIG, URLS } from "./url";
+import { APIResponse, get, axiosInstance } from "./axios";
+import { URLS, API_CONFIG } from "./url";
 
 
 async function fetchSummaryData({ startDate, endDate }: {
@@ -52,6 +52,27 @@ async function fetchPerSlotData(date: string) {
   }
 }
 
+async function fetchPatientImage(imageKey: string): Promise<string> {
+  try {
+    const response = await axiosInstance.get(URLS.PATIENT_IMAGE_API, {
+      params: {
+        image_key: imageKey,
+      },
+      headers: API_CONFIG.HEADERS,
+      responseType: 'json'
+    });
+    
+    if (!response.data.success || !response.data.url) {
+      throw new Error('Invalid response from image API: No URL provided');
+    }
+    
+    return response.data.url;
+  } catch (error) {
+    console.error("Error fetching patient image:", error);
+    throw error;
+  }
+}
+
 async function getNewToken(refreshToken: string | null) {
   if(!refreshToken) {
     return APIResponse.error("Refresh token is required");
@@ -70,5 +91,6 @@ export const API = {
   fetchSummaryData,
   fetchDetailedData,
   fetchPerSlotData,
+  fetchPatientImage,
   getNewToken
 };

@@ -18,6 +18,6 @@ export const URLS = {
     PATIENT_SUMMARY_API: `${environment.apiUrl}pdd/summary`,
     PATIENT_DETAILED_API: `${environment.apiUrl}pdd/detailed/overall`,
     PATIENT_PER_SLOT_API: `${environment.apiUrl}pdd/detailed/per-slot`,
-    PATIENT_IMAGE_API: `${environment.apiUrl}pdd/detailed/per-slot/image`,
+    PATIENT_IMAGE_API: `pdd/detailed/per-slot/image`,
     GET_NEW_TOKEN: `${config.CLOUDPHYSICIAN_LOGIN_SERVICE}api/users/requestAccessToken`,
 }
