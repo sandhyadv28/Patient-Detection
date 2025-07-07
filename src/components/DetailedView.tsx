@@ -44,11 +44,9 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   // Fetch detailed data when component mounts or when summary data changes
   useEffect(() => {
     if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > 0) {
-      // Fetch detailed data for the first day in the range
       const firstDayDate = summaryData.daily_breakdown[0].date;
       dispatch(fetchDetailedData(firstDayDate));
     } else {
-      // Fallback to today's date if no summary data
       dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
     }
   }, [dispatch, summaryData]);
@@ -59,7 +57,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       const { start, end } = getDatePresetRange(preset);
       const startDateStr = start.format('YYYY-MM-DD');
       const endDateStr = end.format('YYYY-MM-DD');
-
       dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
     } else if (preset === 'custom' && startDate && endDate) {
       dispatch(fetchPatientSummary({ startDate, endDate }));
@@ -70,57 +67,33 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     setActiveDay(0);
   }, [summaryData]);
 
-  // Debug per-slot data when it changes
-  useEffect(() => {
-    if (perSlotDetailedData) {
-      console.log('=== PER-SLOT DATA RECEIVED ===');
-      console.log('PerSlotDetailedData:', perSlotDetailedData);
-      console.log('Data type:', typeof perSlotDetailedData);
-      console.log('Is array:', Array.isArray(perSlotDetailedData));
-      if (Array.isArray(perSlotDetailedData)) {
-        console.log('Array length:', perSlotDetailedData.length);
-        perSlotDetailedData.forEach((item, index) => {
-          console.log(`Item ${index}:`, item);
-          if (item && typeof item === 'object') {
-            console.log(`Item ${index} keys:`, Object.keys(item));
-          }
-        });
-      }
-    }
-  }, [perSlotDetailedData]);
-
   const handleRetry = () => {
     dispatch(clearError());
-
+    
     if (preset && preset !== 'custom') {
       const { start, end } = getDatePresetRange(preset);
       const startDateStr = start.format('YYYY-MM-DD');
       const endDateStr = end.format('YYYY-MM-DD');
-
       dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
     } else if (preset === 'custom' && startDate && endDate) {
       dispatch(fetchPatientSummary({ startDate, endDate }));
     } else {
-      // Fallback to today's date for detailed data
       dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
     }
   };
 
   const handleDayClick = (dayIndex: number) => {
     setActiveDay(dayIndex);
-
-    // Clear per-slot data when changing days
     dispatch(clearPerSlotDetailedData());
     setExpandedSlots(new Set());
 
     let selectedDate = '';
-
-    // For custom presets, we need to calculate the date based on the date range
+    
     if (preset === 'custom' && startDate && endDate) {
       const start = moment(startDate);
       const end = moment(endDate);
       const daysDiff = end.diff(start, 'days') + 1;
-
+      
       if (dayIndex < daysDiff) {
         selectedDate = start.clone().add(dayIndex, 'days').format('YYYY-MM-DD');
       }
@@ -131,7 +104,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     if (selectedDate) {
       dispatch(fetchDetailedData(selectedDate));
     } else {
-      // Use the actual number of days for fallback calculation
       const numberOfDays = summaryData?.daily_breakdown?.length || 7;
       const calculatedDate = moment().subtract(numberOfDays - 1 - dayIndex, 'days').format('YYYY-MM-DD');
       dispatch(fetchDetailedData(calculatedDate));
@@ -143,16 +115,12 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     const isExpanding = !newExpanded.has(timeSlot);
 
     if (isExpanding) {
-      // Add to expanded slots
       newExpanded.add(timeSlot);
       setExpandedSlots(newExpanded);
 
-      // Only call API if we don't have per-slot data yet
       if (!perSlotDetailedData) {
-        // Get the selected date
         let selectedDate = '';
 
-        // For custom presets, calculate the date based on the date range
         if (preset === 'custom' && startDate && endDate) {
           const start = moment(startDate);
           const end = moment(endDate);
@@ -164,16 +132,13 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
         } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
           selectedDate = summaryData.daily_breakdown[activeDay].date;
         } else {
-          // Use the actual number of days for fallback calculation
           const numberOfDays = summaryData?.daily_breakdown?.length || 7;
           selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
         }
 
-        // Call the per-slot API only once - it returns data for all slots
         dispatch(fetchPerSlotDetailedData({ date: selectedDate, slotKey: 'all_slots' }));
       }
     } else {
-      // Remove from expanded slots
       newExpanded.delete(timeSlot);
       setExpandedSlots(newExpanded);
     }
@@ -204,12 +169,10 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     setPhotoModal(null);
   };
 
-  // Show error state
   if (error) {
     return <ErrorMessage message={error} onRetry={handleRetry} />;
   }
 
-  // Show empty state
   if (!detailedDayData) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
@@ -226,7 +189,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     );
   }
 
-  // Always show all 8 slots, even if missing in API response
   const slotKeys = [
     'slot_one',
     'slot_two',
@@ -241,25 +203,16 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   type SlotData = { label?: string; overall?: { total_entries?: number; total_detections?: number; total_undetected?: number; detection_rate?: number; undetected_rate?: number } };
   type DayObj = { [key: string]: SlotData };
 
-  // Use the actual number of days from summaryData.daily_breakdown instead of hardcoding to 7
   const numberOfDays = summaryData?.daily_breakdown?.length || 7;
 
-  // Safety check: ensure activeDay doesn't exceed available days
   if (activeDay >= numberOfDays) {
     setActiveDay(0);
   }
 
-  // Create days array from summaryData.daily_breakdown instead of detailedDayData
-  // detailedDayData is for time slots, not days
   const days: DayObj[] = summaryData?.daily_breakdown?.map((day, index) => {
-    // Create a placeholder object for each day that matches DayObj type
-    // The actual slot data will be loaded when a day is clicked
-    return {
-      // Empty object that will be populated with slot data when day is selected
-    } as DayObj;
+    return {} as DayObj;
   }) || [];
 
-  // For the selected day, we still need the detailed slot data
   const selectedDayObj: DayObj = Object.assign({}, ...(detailedDayData || []));
 
   const getStatusColor = (status: string) => {
@@ -274,7 +227,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   let daysArr = summaryData?.daily_breakdown?.slice().reverse() || [];
 
   if (preset === 'previousMonth') {
-    // Generate all days of the previous month using moment
     const prevMonth = moment().subtract(1, 'month');
     const startOfPrevMonth = prevMonth.clone().startOf('month');
     const endOfPrevMonth = prevMonth.clone().endOf('month');
@@ -282,7 +234,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     daysArr = [];
     for (let i = daysInPrevMonth; i >= 1; i--) {
       const date = startOfPrevMonth.clone().date(i).format('YYYY-MM-DD');
-      // Try to find data for this date in summaryData.daily_breakdown
       const backendDay = summaryData?.daily_breakdown?.find(d => d.date === date);
       daysArr.push(
         backendDay || {
@@ -298,15 +249,13 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       );
     }
   } else if (preset === 'custom' && startDate && endDate) {
-    // For custom preset, generate days based on the selected date range
     const start = moment(startDate);
     const end = moment(endDate);
-    const daysDiff = end.diff(start, 'days') + 1; // +1 to include both start and end dates
-
+    const daysDiff = end.diff(start, 'days') + 1;
+    
     daysArr = [];
     for (let i = 0; i < daysDiff; i++) {
       const currentDate = start.clone().add(i, 'days').format('YYYY-MM-DD');
-      // Try to find data for this date in summaryData.daily_breakdown
       const backendDay = summaryData?.daily_breakdown?.find(d => d.date === currentDate);
       daysArr.push(
         backendDay || {
@@ -322,12 +271,9 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       );
     }
   } else {
-    // For custom preset, use the actual data without padding
     if (preset === 'custom') {
-      // Just use the actual days from the backend without any padding
       daysArr = summaryData?.daily_breakdown?.slice().reverse() || [];
     } else {
-      // For preset-based ranges (last7, last30), pad if needed
       const expectedDays = preset === 'last30' ? 30 : 7;
       if (daysArr.length !== expectedDays) {
         const missing = expectedDays - daysArr.length;
@@ -336,20 +282,17 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
           const padDate = moment(oldestDate).subtract(i, 'days').format('YYYY-MM-DD');
           daysArr.push({ date: padDate } as any);
         }
-        // After padding, sort so most recent is first, then slice to expectedDays
         daysArr = daysArr.sort((a, b) => moment(b.date).diff(moment(a.date))).slice(0, expectedDays);
       }
     }
   }
 
-  // Calculate selectedDate after daysArr is created
   let selectedDate = '';
   if (preset === 'custom' && daysArr && daysArr.length > activeDay) {
     selectedDate = daysArr[activeDay].date;
   } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
     selectedDate = summaryData.daily_breakdown[activeDay].date;
   } else {
-    // Use the actual number of days for fallback calculation
     const numberOfDays = summaryData?.daily_breakdown?.length || 7;
     selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
   }
@@ -505,101 +448,15 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                               </tr>
                             ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
                               (() => {
-                                console.log('=== SLOT DATA DEBUG ===');
-                                console.log('PerSlotDetailedData:', perSlotDetailedData);
-                                console.log('Current SlotKey:', slotKey);
-                                console.log('Expanded Slots:', Array.from(expandedSlots));
-
-                                // The API returns an array where each item contains data for a different slot
-                                // We need to find the item that contains our requested slot
                                 let slotData: any = null;
 
-                                // First, try to find the slot data in the first array item (most common case)
-                                if (perSlotDetailedData[0] && perSlotDetailedData[0][slotKey]) {
-                                  slotData = perSlotDetailedData[0][slotKey];
-                                  console.log('Found slot data in first array item:', slotData);
-                                } else {
-                                  // Try direct array index access based on slot number
-                                  const slotNumber = slotKey.replace('slot_', '').replace('one', '1').replace('two', '2').replace('three', '3').replace('four', '4').replace('five', '5').replace('six', '6').replace('seven', '7').replace('eight', '8');
-                                  const slotIndex = parseInt(slotNumber) - 1; // Convert to 0-based index
+                                // Direct array index access based on slot number (most efficient)
+                                const slotNumber = slotKey.replace('slot_', '').replace('one', '1').replace('two', '2').replace('three', '3').replace('four', '4').replace('five', '5').replace('six', '6').replace('seven', '7').replace('eight', '8');
+                                const slotIndex = parseInt(slotNumber) - 1;
 
-                                  if (perSlotDetailedData[slotIndex]) {
-                                    const dayData = perSlotDetailedData[slotIndex];
-                                    console.log(`Trying direct array index ${slotIndex} for slot ${slotKey}:`, dayData);
-
-                                    // Try to find the slot data by slotKey in this array item
-                                    if (dayData[slotKey]) {
-                                      slotData = dayData[slotKey];
-                                      console.log(`Found slot data by direct array index ${slotIndex}:`, slotData);
-                                    }
-                                  }
-
-                                  // If still not found, search through all array items
-                                  if (!slotData) {
-                                    // Search through all array items to find the correct slot
-                                    for (let i = 0; i < perSlotDetailedData.length; i++) {
-                                      const dayData = perSlotDetailedData[i];
-                                      console.log(`Checking array item ${i}:`, dayData);
-                                      console.log(`Array item ${i} keys:`, Object.keys(dayData));
-
-                                      // Try to find the slot data by slotKey first
-                                      if (dayData[slotKey]) {
-                                        slotData = dayData[slotKey];
-                                        console.log(`Found slot data in array item ${i}:`, slotData);
-                                        break;
-                                      }
-
-                                      // If not found, try to find by slot number
-                                      const slotNumber = slotKey.replace('slot_', '').replace('one', '1').replace('two', '2').replace('three', '3').replace('four', '4').replace('five', '5').replace('six', '6').replace('seven', '7').replace('eight', '8');
-                                      if (dayData[slotNumber]) {
-                                        slotData = dayData[slotNumber];
-                                        console.log(`Found slot data by number in array item ${i}:`, slotData);
-                                        break;
-                                      }
-
-                                      // Try to find by any key that contains the slot number
-                                      Object.keys(dayData).forEach(key => {
-                                        if (key.includes(slotNumber) || key.includes(slotKey)) {
-                                          slotData = dayData[key];
-                                          console.log(`Found slot data by key match '${key}' in array item ${i}:`, slotData);
-                                        }
-                                      });
-
-                                      // Try to find by time label
-                                      const timeLabel = getSlotTimeLabel(slotKey);
-                                      Object.keys(dayData).forEach(key => {
-                                        const data = dayData[key];
-                                        if (data && data.label && data.label.startsWith(timeLabel)) {
-                                          slotData = data;
-                                          console.log(`Found slot data by time label '${timeLabel}' in array item ${i}:`, slotData);
-                                        }
-                                      });
-
-                                      if (slotData) break;
-                                    }
-                                  }
+                                if (perSlotDetailedData[slotIndex] && perSlotDetailedData[slotIndex][slotKey]) {
+                                  slotData = perSlotDetailedData[slotIndex][slotKey];
                                 }
-
-                                // Fallback: try to access data directly if it's not an array
-                                if (!slotData && typeof perSlotDetailedData === 'object' && !Array.isArray(perSlotDetailedData)) {
-                                  console.log('Trying direct object access...');
-                                  if (perSlotDetailedData[slotKey]) {
-                                    slotData = perSlotDetailedData[slotKey];
-                                    console.log('Found slot data via direct object access:', slotData);
-                                  } else {
-                                    // Try to find by time label in direct object
-                                    const timeLabel = getSlotTimeLabel(slotKey);
-                                    Object.keys(perSlotDetailedData).forEach(key => {
-                                      const data = perSlotDetailedData[key as keyof typeof perSlotDetailedData] as any;
-                                      if (data && typeof data === 'object' && data.label && data.label.startsWith(timeLabel)) {
-                                        slotData = data;
-                                        console.log(`Found slot data by time label '${timeLabel}' in direct object:`, slotData);
-                                      }
-                                    });
-                                  }
-                                }
-
-                                console.log('Final SlotData for', slotKey, ':', slotData);
 
                                 if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
                                   return slotData.per_bed.map((bed: any, index: number) => (
