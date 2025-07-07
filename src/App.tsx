@@ -9,6 +9,7 @@ import LandingPage from './components/Layout/LandingPage';
 import { ViewType } from './components/modals';
 import SummaryView from './components/SummaryView';
 import { useAuth } from './hooks/useAuth';
+import { usePatientData } from './hooks/usePatientData';
 import { useStorageListener } from './hooks/useStorageListener';
 
 function App() {
@@ -20,16 +21,12 @@ function App() {
     startDate,
     endDate,
     preset,
-    isLoading,
-    error,
     handleDateRangeChange,
     handlePresetChange,
   } = usePatientData();
 
-  // Listen for logout events from other tabs
   useStorageListener();
 
-  // Show landing page if user is not authenticated
   if (!user) {
     return (
       <LandingPage

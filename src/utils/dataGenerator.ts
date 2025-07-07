@@ -1,6 +1,4 @@
-import { DayData, DetectionRecord, SummaryData, TimeSlotSummary } from '../components/modals';
-import { APP_CONFIG, DATE_FORMAT_OPTIONS } from './constants';
-import { validateDateRange } from './validation';
+import {DATE_FORMAT_OPTIONS } from './constants';
 import moment from 'moment-timezone';
 
 // Enhanced data generation with more realistic patterns
