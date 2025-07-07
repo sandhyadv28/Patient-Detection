@@ -15,7 +15,7 @@ type DetailedViewProps = {
   endDate?: string;
 };
 
-export default function DetailedView({ preset, startDate, endDate }: DetailedViewProps) {
+export default function DetailedView({ preset }: DetailedViewProps) {
   const dispatch = useAppDispatch();
   const patientDetailedData = useAppSelector((state: RootState) => state.patient);
   const { detailedDayData = null, summaryData = null, isLoading = false, error = null, perSlotDetailedData = null, isPerSlotLoading = false } = patientDetailedData || {};
@@ -153,15 +153,15 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
   type SlotData = { label?: string; overall?: { total_entries?: number; total_detections?: number; total_undetected?: number; detection_rate?: number; undetected_rate?: number } };
   type DayObj = { [key: string]: SlotData };
-  
+
   // Use the actual number of days from summaryData.daily_breakdown instead of hardcoding to 7
   const numberOfDays = summaryData?.daily_breakdown?.length || 7;
-  
+
   // Safety check: ensure activeDay doesn't exceed available days
   if (activeDay >= numberOfDays) {
     setActiveDay(0);
   }
-  
+
   // Create days array from summaryData.daily_breakdown instead of detailedDayData
   // detailedDayData is for time slots, not days
   const days: DayObj[] = summaryData?.daily_breakdown?.map((day, index) => {
@@ -171,7 +171,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       // Empty object that will be populated with slot data when day is selected
     } as DayObj;
   }) || [];
-  
+
   // For the selected day, we still need the detailed slot data
   const selectedDayObj: DayObj = Object.assign({}, ...(detailedDayData || []));
 
@@ -477,7 +477,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                     src={photoModal}
                     alt="Patient detection"
                     className="w-full h-full rounded-xl shadow-lg"
-                    onLoad={() => {}}
+                    onLoad={() => { }}
                     onError={(e) => {
                       setImageError('Failed to load image');
                     }}
