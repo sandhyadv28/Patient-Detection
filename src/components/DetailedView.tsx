@@ -415,80 +415,85 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                   <div className="border-t border-gray-200">
                     <div className="p-6">
                       <h5 className="text-lg font-semibold text-gray-900 mb-4">Bed Details</h5>
-                      {isPerSlotLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <LoadingSpinner size="md" message="Loading bed details..." />
-                        </div>
-                      ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
-                        (() => {
-                          // Find the slot data for the current slotKey
-                          const dayData = perSlotDetailedData[0];
-                          const slotData = dayData[slotKey];
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Bed No.
+                              </th>
+                              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Detection Status
+                              </th>
+                              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                View Photo
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {isPerSlotLoading ? (
+                              <tr>
+                                <td colSpan={3} className="px-4 py-8">
+                                  <div className="flex items-center justify-center">
+                                    <LoadingSpinner size="md" message="Loading bed details..." />
+                                  </div>
+                                </td>
+                              </tr>
+                            ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
+                              (() => {
+                                const dayData = perSlotDetailedData[0];
+                                const slotData = dayData[slotKey];
 
-                          if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
-                            return (
-                              <div className="overflow-x-auto">
-                                <table className="w-full">
-                                  <thead className="bg-gray-50">
-                                    <tr>
-                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Bed No.
-                                      </th>
-                                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Detection Status
-                                      </th>
-                                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        View Photo
-                                      </th>
+                                if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
+                                  return slotData.per_bed.map((bed, index) => (
+                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                      <td className="px-4 py-3 whitespace-nowrap">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                          Bed {bed.bed_no}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(bed.detection_status ? 'Yes' : 'No')}`}>
+                                          {bed.detection_status ? 'Yes' : 'No'}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                                        {bed.imageURL ? (
+                                          <button
+                                            onClick={() => handleViewPhoto(bed.imageURL!)}
+                                            className="inline-flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-700 transition-colors"
+                                          >
+                                            <Eye size={14} />
+                                            View Photo
+                                          </button>
+                                        ) : (
+                                          <span className="text-gray-400 text-sm">
+                                            No photo available
+                                          </span>
+                                        )}
+                                      </td>
                                     </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-200">
-                                    {slotData.per_bed.map((bed, index) => (
-                                      <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            Bed {bed.bed_no}
-                                          </span>
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-center">
-                                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(bed.detection_status ? 'Yes' : 'No')}`}>
-                                            {bed.detection_status ? 'Yes' : 'No'}
-                                          </span>
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap text-center">
-                                          {bed.imageURL ? (
-                                            <button
-                                              onClick={() => handleViewPhoto(bed.imageURL!)}
-                                              className="inline-flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-700 transition-colors"
-                                            >
-                                              <Eye size={14} />
-                                              View Photo
-                                            </button>
-                                          ) : (
-                                            <span className="text-gray-400 text-sm">
-                                              No photo available
-                                            </span>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            );
-                          } else {
-                            return (
-                              <div className="text-center py-8">
-                                <p className="text-gray-600">No bed details available for this time slot.</p>
-                              </div>
-                            );
-                          }
-                        })()
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-gray-600">No bed details available for this time slot.</p>
-                        </div>
-                      )}
+                                  ));
+                                } else {
+                                  return (
+                                    <tr>
+                                      <td colSpan={3} className="px-4 py-8 text-center">
+                                        <p className="text-gray-600">No bed details available for this time slot.</p>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                              })()
+                            ) : (
+                              <tr>
+                                <td colSpan={3} className="px-4 py-8 text-center">
+                                  <p className="text-gray-600">No bed details available for this time slot.</p>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 )}
