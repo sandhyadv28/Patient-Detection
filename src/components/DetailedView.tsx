@@ -76,7 +76,17 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     setActiveDay(dayIndex);
 
     let selectedDate = '';
-    if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > dayIndex) {
+
+    // For custom presets, we need to calculate the date based on the date range
+    if (preset === 'custom' && startDate && endDate) {
+      const start = moment(startDate);
+      const end = moment(endDate);
+      const daysDiff = end.diff(start, 'days') + 1;
+
+      if (dayIndex < daysDiff) {
+        selectedDate = start.clone().add(dayIndex, 'days').format('YYYY-MM-DD');
+      }
+    } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > dayIndex) {
       selectedDate = summaryData.daily_breakdown[dayIndex].date;
     }
 
@@ -101,7 +111,17 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
       // Get the selected date
       let selectedDate = '';
-      if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
+
+      // For custom presets, calculate the date based on the date range
+      if (preset === 'custom' && startDate && endDate) {
+        const start = moment(startDate);
+        const end = moment(endDate);
+        const daysDiff = end.diff(start, 'days') + 1;
+
+        if (activeDay < daysDiff) {
+          selectedDate = start.clone().add(activeDay, 'days').format('YYYY-MM-DD');
+        }
+      } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
         selectedDate = summaryData.daily_breakdown[activeDay].date;
       } else {
         // Use the actual number of days for fallback calculation
@@ -201,15 +221,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   // For the selected day, we still need the detailed slot data
   const selectedDayObj: DayObj = Object.assign({}, ...(detailedDayData || []));
 
-  let selectedDate = '';
-  if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
-    selectedDate = summaryData.daily_breakdown[activeDay].date;
-  } else {
-    // Use the actual number of days for fallback calculation
-    const numberOfDays = summaryData?.daily_breakdown?.length || 7;
-    selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
-  }
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Yes': return 'bg-green-100 text-green-800';
@@ -288,6 +299,18 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
         daysArr = daysArr.sort((a, b) => moment(b.date).diff(moment(a.date))).slice(0, expectedDays);
       }
     }
+  }
+
+  // Calculate selectedDate after daysArr is created
+  let selectedDate = '';
+  if (preset === 'custom' && daysArr && daysArr.length > activeDay) {
+    selectedDate = daysArr[activeDay].date;
+  } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
+    selectedDate = summaryData.daily_breakdown[activeDay].date;
+  } else {
+    // Use the actual number of days for fallback calculation
+    const numberOfDays = summaryData?.daily_breakdown?.length || 7;
+    selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
   }
 
   return (
@@ -441,11 +464,41 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                               </tr>
                             ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
                               (() => {
-                                const dayData = perSlotDetailedData[0];
-                                const slotData = dayData[slotKey];
+                                // The API returns an array where each item contains data for a different slot
+                                // We need to find the item that contains our requested slot
+                                let slotData: any = null;
+
+                                // Search through all array items to find the correct slot
+                                for (let i = 0; i < perSlotDetailedData.length; i++) {
+                                  const dayData = perSlotDetailedData[i];
+
+                                  // Try to find the slot data by slotKey first
+                                  if (dayData[slotKey]) {
+                                    slotData = dayData[slotKey];
+                                    console.log('=== NEW LOGIC EXECUTED ===');
+                                    console.log('PerSlotDetailedData:', perSlotDetailedData);
+                                    console.log('SlotKey:', slotKey);
+                                    console.log('Final SlotData:', slotData);
+                                    break;
+                                  }
+
+                                  // If not found, try to find by slot number
+                                  const slotNumber = slotKey.replace('slot_', '').replace('one', '1').replace('two', '2').replace('three', '3').replace('four', '4').replace('five', '5').replace('six', '6').replace('seven', '7').replace('eight', '8');
+                                  if (dayData[slotNumber]) {
+                                    slotData = dayData[slotNumber];
+                                    console.log('=== NEW LOGIC EXECUTED ===');
+                                    console.log('PerSlotDetailedData:', perSlotDetailedData);
+                                    console.log('SlotKey:', slotKey);
+                                    console.log('Final SlotData:', slotData);
+                                    break;
+                                  }
+
+
+                                  if (slotData) break;
+                                }
 
                                 if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
-                                  return slotData.per_bed.map((bed, index) => (
+                                  return slotData.per_bed.map((bed: any, index: number) => (
                                     <tr key={index} className="hover:bg-gray-50 transition-colors">
                                       <td className="px-4 py-3 whitespace-nowrap">
                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

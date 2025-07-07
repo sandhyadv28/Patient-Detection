@@ -37,14 +37,44 @@ async function fetchDetailedData(date: string) {
   }
 }
 
-async function fetchPerSlotData(date: string) {
+async function fetchPerSlotData(date: string, slotKey?: string) {
   try {
+    const params: any = {
+      req_date: date,
+    };
+    
+    if (slotKey) {
+      params.slot_identifier = slotKey;
+      params.requested_slot = slotKey;
+      params.target_slot = slotKey;
+    }
+    
+    console.log('=== API REQUEST DEBUG ===');
+    console.log('API Request Parameters:', params);
+    console.log('API URL:', URLS.PATIENT_PER_SLOT_API);
+    console.log('SlotKey received:', slotKey);
+    
     const response = await axios.get(URLS.PATIENT_PER_SLOT_API, {
-      params: {
-        req_date: date,
-      },
+      params,
       headers: API_CONFIG.HEADERS
     });
+    
+    console.log('=== API RESPONSE DEBUG ===');
+    console.log('API Response Status:', response.status);
+    console.log('API Response Data:', response.data);
+    console.log('API Response Data Type:', typeof response.data);
+    console.log('API Response Data Keys:', Object.keys(response.data));
+    
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      console.log('Data Array Length:', response.data.data.length);
+      response.data.data.forEach((item: any, index: number) => {
+        console.log(`Data Item ${index}:`, item);
+        if (item && typeof item === 'object') {
+          console.log(`Data Item ${index} Keys:`, Object.keys(item));
+        }
+      });
+    }
+    
     return response.data;
   } catch (error) {
     console.error("Error fetching per-slot data:", error);

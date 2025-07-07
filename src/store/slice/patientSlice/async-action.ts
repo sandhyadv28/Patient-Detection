@@ -111,7 +111,7 @@ export const fetchPerSlotDetailedData = createAsyncThunk(
       const dateISO = moment(targetDate).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
       
       // Use API service instead of direct fetch
-      const response = await API.fetchPerSlotData(dateISO) as PerSlotDetailedResponse;
+      const response = await API.fetchPerSlotData(dateISO, slotKey) as PerSlotDetailedResponse;
       
       return response.data;
       
