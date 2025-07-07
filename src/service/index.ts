@@ -43,7 +43,7 @@ async function fetchPerSlotData(date: string, slotKey?: string) {
       req_date: date,
     };
     
-    if (slotKey) {
+    if (slotKey && slotKey !== 'all_slots') {
       params.slot_identifier = slotKey;
       params.requested_slot = slotKey;
       params.target_slot = slotKey;

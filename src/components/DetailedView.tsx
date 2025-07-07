@@ -5,7 +5,7 @@ import ErrorMessage from '../_common/ErrorMessage';
 import LoadingSpinner from '../_common/LoadingSpinner';
 import { API } from '../service';
 import { useAppDispatch, useAppSelector } from '../store/hook';
-import { clearError, fetchDetailedData, fetchPatientSummary, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
+import { clearError, clearPerSlotDetailedData, fetchDetailedData, fetchPatientSummary, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
 import { formatDate, getDatePresetRange } from '../utils/dataGenerator';
 
@@ -25,6 +25,21 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   const [photoModal, setPhotoModal] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+
+  // Map slot keys to time labels
+  const getSlotTimeLabel = (slotKey: string): string => {
+    const timeSlotMap: { [key: string]: string } = {
+      'slot_one': '6AM',
+      'slot_two': '9AM',
+      'slot_three': '12PM',
+      'slot_four': '3PM',
+      'slot_five': '6PM',
+      'slot_six': '9PM',
+      'slot_seven': '12AM',
+      'slot_eight': '3AM'
+    };
+    return timeSlotMap[slotKey] || slotKey;
+  };
 
   // Fetch detailed data when component mounts or when summary data changes
   useEffect(() => {
@@ -55,6 +70,25 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     setActiveDay(0);
   }, [summaryData]);
 
+  // Debug per-slot data when it changes
+  useEffect(() => {
+    if (perSlotDetailedData) {
+      console.log('=== PER-SLOT DATA RECEIVED ===');
+      console.log('PerSlotDetailedData:', perSlotDetailedData);
+      console.log('Data type:', typeof perSlotDetailedData);
+      console.log('Is array:', Array.isArray(perSlotDetailedData));
+      if (Array.isArray(perSlotDetailedData)) {
+        console.log('Array length:', perSlotDetailedData.length);
+        perSlotDetailedData.forEach((item, index) => {
+          console.log(`Item ${index}:`, item);
+          if (item && typeof item === 'object') {
+            console.log(`Item ${index} keys:`, Object.keys(item));
+          }
+        });
+      }
+    }
+  }, [perSlotDetailedData]);
+
   const handleRetry = () => {
     dispatch(clearError());
 
@@ -74,6 +108,10 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
   const handleDayClick = (dayIndex: number) => {
     setActiveDay(dayIndex);
+
+    // Clear per-slot data when changing days
+    dispatch(clearPerSlotDetailedData());
+    setExpandedSlots(new Set());
 
     let selectedDate = '';
 
@@ -109,28 +147,31 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       newExpanded.add(timeSlot);
       setExpandedSlots(newExpanded);
 
-      // Get the selected date
-      let selectedDate = '';
+      // Only call API if we don't have per-slot data yet
+      if (!perSlotDetailedData) {
+        // Get the selected date
+        let selectedDate = '';
 
-      // For custom presets, calculate the date based on the date range
-      if (preset === 'custom' && startDate && endDate) {
-        const start = moment(startDate);
-        const end = moment(endDate);
-        const daysDiff = end.diff(start, 'days') + 1;
+        // For custom presets, calculate the date based on the date range
+        if (preset === 'custom' && startDate && endDate) {
+          const start = moment(startDate);
+          const end = moment(endDate);
+          const daysDiff = end.diff(start, 'days') + 1;
 
-        if (activeDay < daysDiff) {
-          selectedDate = start.clone().add(activeDay, 'days').format('YYYY-MM-DD');
+          if (activeDay < daysDiff) {
+            selectedDate = start.clone().add(activeDay, 'days').format('YYYY-MM-DD');
+          }
+        } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
+          selectedDate = summaryData.daily_breakdown[activeDay].date;
+        } else {
+          // Use the actual number of days for fallback calculation
+          const numberOfDays = summaryData?.daily_breakdown?.length || 7;
+          selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
         }
-      } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
-        selectedDate = summaryData.daily_breakdown[activeDay].date;
-      } else {
-        // Use the actual number of days for fallback calculation
-        const numberOfDays = summaryData?.daily_breakdown?.length || 7;
-        selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
-      }
 
-      // Call the per-slot API
-      dispatch(fetchPerSlotDetailedData({ date: selectedDate, slotKey }));
+        // Call the per-slot API only once - it returns data for all slots
+        dispatch(fetchPerSlotDetailedData({ date: selectedDate, slotKey: 'all_slots' }));
+      }
     } else {
       // Remove from expanded slots
       newExpanded.delete(timeSlot);
@@ -464,38 +505,101 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                               </tr>
                             ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
                               (() => {
+                                console.log('=== SLOT DATA DEBUG ===');
+                                console.log('PerSlotDetailedData:', perSlotDetailedData);
+                                console.log('Current SlotKey:', slotKey);
+                                console.log('Expanded Slots:', Array.from(expandedSlots));
+
                                 // The API returns an array where each item contains data for a different slot
                                 // We need to find the item that contains our requested slot
                                 let slotData: any = null;
 
-                                // Search through all array items to find the correct slot
-                                for (let i = 0; i < perSlotDetailedData.length; i++) {
-                                  const dayData = perSlotDetailedData[i];
-
-                                  // Try to find the slot data by slotKey first
-                                  if (dayData[slotKey]) {
-                                    slotData = dayData[slotKey];
-                                    console.log('=== NEW LOGIC EXECUTED ===');
-                                    console.log('PerSlotDetailedData:', perSlotDetailedData);
-                                    console.log('SlotKey:', slotKey);
-                                    console.log('Final SlotData:', slotData);
-                                    break;
-                                  }
-
-                                  // If not found, try to find by slot number
+                                // First, try to find the slot data in the first array item (most common case)
+                                if (perSlotDetailedData[0] && perSlotDetailedData[0][slotKey]) {
+                                  slotData = perSlotDetailedData[0][slotKey];
+                                  console.log('Found slot data in first array item:', slotData);
+                                } else {
+                                  // Try direct array index access based on slot number
                                   const slotNumber = slotKey.replace('slot_', '').replace('one', '1').replace('two', '2').replace('three', '3').replace('four', '4').replace('five', '5').replace('six', '6').replace('seven', '7').replace('eight', '8');
-                                  if (dayData[slotNumber]) {
-                                    slotData = dayData[slotNumber];
-                                    console.log('=== NEW LOGIC EXECUTED ===');
-                                    console.log('PerSlotDetailedData:', perSlotDetailedData);
-                                    console.log('SlotKey:', slotKey);
-                                    console.log('Final SlotData:', slotData);
-                                    break;
+                                  const slotIndex = parseInt(slotNumber) - 1; // Convert to 0-based index
+
+                                  if (perSlotDetailedData[slotIndex]) {
+                                    const dayData = perSlotDetailedData[slotIndex];
+                                    console.log(`Trying direct array index ${slotIndex} for slot ${slotKey}:`, dayData);
+
+                                    // Try to find the slot data by slotKey in this array item
+                                    if (dayData[slotKey]) {
+                                      slotData = dayData[slotKey];
+                                      console.log(`Found slot data by direct array index ${slotIndex}:`, slotData);
+                                    }
                                   }
 
+                                  // If still not found, search through all array items
+                                  if (!slotData) {
+                                    // Search through all array items to find the correct slot
+                                    for (let i = 0; i < perSlotDetailedData.length; i++) {
+                                      const dayData = perSlotDetailedData[i];
+                                      console.log(`Checking array item ${i}:`, dayData);
+                                      console.log(`Array item ${i} keys:`, Object.keys(dayData));
 
-                                  if (slotData) break;
+                                      // Try to find the slot data by slotKey first
+                                      if (dayData[slotKey]) {
+                                        slotData = dayData[slotKey];
+                                        console.log(`Found slot data in array item ${i}:`, slotData);
+                                        break;
+                                      }
+
+                                      // If not found, try to find by slot number
+                                      const slotNumber = slotKey.replace('slot_', '').replace('one', '1').replace('two', '2').replace('three', '3').replace('four', '4').replace('five', '5').replace('six', '6').replace('seven', '7').replace('eight', '8');
+                                      if (dayData[slotNumber]) {
+                                        slotData = dayData[slotNumber];
+                                        console.log(`Found slot data by number in array item ${i}:`, slotData);
+                                        break;
+                                      }
+
+                                      // Try to find by any key that contains the slot number
+                                      Object.keys(dayData).forEach(key => {
+                                        if (key.includes(slotNumber) || key.includes(slotKey)) {
+                                          slotData = dayData[key];
+                                          console.log(`Found slot data by key match '${key}' in array item ${i}:`, slotData);
+                                        }
+                                      });
+
+                                      // Try to find by time label
+                                      const timeLabel = getSlotTimeLabel(slotKey);
+                                      Object.keys(dayData).forEach(key => {
+                                        const data = dayData[key];
+                                        if (data && data.label && data.label.startsWith(timeLabel)) {
+                                          slotData = data;
+                                          console.log(`Found slot data by time label '${timeLabel}' in array item ${i}:`, slotData);
+                                        }
+                                      });
+
+                                      if (slotData) break;
+                                    }
+                                  }
                                 }
+
+                                // Fallback: try to access data directly if it's not an array
+                                if (!slotData && typeof perSlotDetailedData === 'object' && !Array.isArray(perSlotDetailedData)) {
+                                  console.log('Trying direct object access...');
+                                  if (perSlotDetailedData[slotKey]) {
+                                    slotData = perSlotDetailedData[slotKey];
+                                    console.log('Found slot data via direct object access:', slotData);
+                                  } else {
+                                    // Try to find by time label in direct object
+                                    const timeLabel = getSlotTimeLabel(slotKey);
+                                    Object.keys(perSlotDetailedData).forEach(key => {
+                                      const data = perSlotDetailedData[key as keyof typeof perSlotDetailedData] as any;
+                                      if (data && typeof data === 'object' && data.label && data.label.startsWith(timeLabel)) {
+                                        slotData = data;
+                                        console.log(`Found slot data by time label '${timeLabel}' in direct object:`, slotData);
+                                      }
+                                    });
+                                  }
+                                }
+
+                                console.log('Final SlotData for', slotKey, ':', slotData);
 
                                 if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
                                   return slotData.per_bed.map((bed: any, index: number) => (
