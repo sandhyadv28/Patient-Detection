@@ -310,7 +310,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
         {/* Day Tabs */}
         <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto mb-4">
-          {daysArr.map((day, index, arr) => (
+          {daysArr.map((day, index) => (
             <button
               key={index}
               onClick={() => handleDayClick(index)}
@@ -319,7 +319,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
-              Day {index + 1} ({formatDate(day.date)})
+              Day {index + 1} 
             </button>
           ))}
         </div>

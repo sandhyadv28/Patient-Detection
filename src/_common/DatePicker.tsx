@@ -49,11 +49,12 @@ const DatePicker: React.FC<DatePickerProps> = ({
   const currentDate = new Date();
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
     if (value) {
-      return new Date(value);
+      // Handle both ISO format and YYYY-MM-DD format
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? currentDate : date;
     }
     return currentDate;
   });
-  const [isOpen, setIsOpen] = useState(false);
 
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [showTimeOptions, setShowTimeOptions] = useState(false);
@@ -173,26 +174,26 @@ const DatePicker: React.FC<DatePickerProps> = ({
   const handleDateClick = (day: number) => {
     const newDate = new Date(currentYear, currentMonth, day);
     
-  
     if (isDateDisabled(newDate)) {
       return;
     }
 
-   
     setSelectedDate(newDate);
     
-    
     const newDateValue = moment(newDate).format('YYYY-MM-DD');
-    const timeValue = selectedTime !== 'Set time' 
-      ? moment(`${newDateValue} ${to24HourFormat(selectedTime)}`).format()
-      : moment(newDateValue).format();
     
-    onChange(timeValue);
+    // If time is enabled, include time, otherwise just return the date
+    if (time) {
+      const timeValue = selectedTime !== 'Set time' 
+        ? moment(`${newDateValue} ${to24HourFormat(selectedTime)}`).format()
+        : moment(newDateValue).format();
+      onChange(timeValue);
+    } else {
+      onChange(newDateValue);
+    }
     
-   
     setIsCalendarVisible(false);
   };
-
 
   const isPreviousMonthDisabled = (): boolean => {
     if (!parsedMinDate) return false;
@@ -236,7 +237,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
           parsedMinDate.getMonth() + 1, 
           0
         );
-        
        
         if (firstDayOfNewMonth < lastDayOfMinMonth) {
           setCurrentYear(parsedMinDate.getFullYear());
@@ -275,22 +275,6 @@ const DatePicker: React.FC<DatePickerProps> = ({
       setCurrentYear(newYear);
       return newMonth;
     });
-  };
-
-  const formatDateTime = (date: Date | null, timeStr: string): string => {
-    if (!date) return "";
-
-    const [hours, minutes] = to24HourFormat(timeStr).split(":").map(Number);
-
-    
-    const tz = timeZone || "Asia/Kolkata";
-    const dateInTz = moment.tz(date, tz)
-      .hour(hours)
-      .minute(minutes)
-      .second(0)
-      .millisecond(0);
-
-    return dateInTz.toISOString();
   };
 
  
