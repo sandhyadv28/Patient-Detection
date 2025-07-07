@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AuthInitializer from './components/AuthInitializer';
 import DateRangePicker from './components/DateRangePicker';
-import DrilldownView from './components/DrilldownView';
+import DetailedView from './components/DetailedView';
 import ViewToggle from './components/Layout/AnalysisTabs';
 import Footer from './components/Layout/Footer';
 import Header from './components/Layout/Header';
@@ -70,7 +70,7 @@ function App() {
             {currentView === 'summary' ? (
               <SummaryView startDate={startDate} endDate={endDate} preset={preset} />
             ) : (
-              <DrilldownView preset={preset} startDate={startDate} endDate={endDate} />
+              <DetailedView preset={preset} startDate={startDate} endDate={endDate} />
             )}
           </main>
 

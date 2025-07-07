@@ -3,94 +3,6 @@ import moment from 'moment-timezone';
 import { DayData } from "../../../components/modals";
 import { API } from '../../../service';
 
-
-
-interface DetailedDrilldownResponse {
-  status: string;
-  data: Array<{
-    slot_one?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-    slot_two?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-    slot_three?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-    slot_four?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-    slot_five?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-    slot_six?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-    slot_seven?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-    slot_eight?: {
-      label: string;
-      overall: {
-        total_entries: number;
-        total_detections: number;
-        total_undetected: number;
-        detection_rate: number;
-        undetected_rate: number;
-      };
-    };
-  }>;
-}
-
 interface PerSlotDetailedDay {
   [key: string]: {
     label: string;
@@ -170,8 +82,8 @@ export const fetchPatientSummary = createAsyncThunk(
   }
 );
 
-export const fetchDetailedDrilldownData = createAsyncThunk(
-  "patient/fetchDetailedDrilldownData",
+export const fetchDetailedData = createAsyncThunk(
+  "patient/fetchDetailedData",
   async (date: string = moment().format('YYYY-MM-DD'), { rejectWithValue }) => {
     try {
       const dateISO = moment(date).hour(15).minute(34).second(7).millisecond(0).format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');

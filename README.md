@@ -31,7 +31,7 @@ src/
 │   │   └── ErrorMessage.tsx
 │   ├── AuthModal.tsx
 │   ├── DateRangePicker.tsx
-│   ├── DrilldownView.tsx
+│   ├── DetailedView.tsx
 │   ├── ExportButton.tsx
 │   ├── SummaryView.tsx
 │   └── UserProfile.tsx
@@ -57,7 +57,7 @@ src/
 #### 2. **Component Separation**
 - **Layout Components**: Header, Footer, LandingPage, AnalysisTabs
 - **UI Components**: LoadingSpinner, ErrorMessage for consistent user experience
-- **Business Components**: SummaryView, DrilldownView for specific functionality
+- **Business Components**: SummaryView, DetailedView for specific functionality
 
 #### 3. **Utility Functions**
 - **Constants**: Centralized configuration and constants

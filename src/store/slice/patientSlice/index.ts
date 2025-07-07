@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { DayData } from "../../../components/modals";
-import { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
+import { fetchDetailedData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
 import { createSetState } from "../../utility";
 
 // Raw API response interfaces
@@ -189,19 +189,19 @@ const patientSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch patient summary';
       })
       
-      // Handle fetchDetailedDrilldownData
-      .addCase(fetchDetailedDrilldownData.pending, (state) => {
+      // Handle fetchDetailedData
+      .addCase(fetchDetailedData.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchDetailedDrilldownData.fulfilled, (state, action) => {
+      .addCase(fetchDetailedData.fulfilled, (state, action) => {
         state.isLoading = false;
         state.detailedDayData = action.payload;
         state.error = null;
       })
-      .addCase(fetchDetailedDrilldownData.rejected, (state, action) => {
+      .addCase(fetchDetailedData.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Failed to fetch detailed data';
+        state.error = action.payload as string;
       })
       
       // Handle fetchPerSlotDetailedData
@@ -233,5 +233,5 @@ export const {
   setPerSlotLoading, 
   setError 
 } = patientSlice.actions;
-export { fetchDetailedDrilldownData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
+export { fetchDetailedData, fetchPatientSummary, fetchPerSlotDetailedData } from "./async-action";
 export default patientSlice.reducer;

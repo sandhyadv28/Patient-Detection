@@ -16,9 +16,9 @@ export default function AnalysisTabs({ currentView, onViewChange }: AnalysisTabs
           Summary View
         </button>
         <button
-          onClick={() => onViewChange('drilldown')}
+          onClick={() => onViewChange('detailed')}
           className={`flex-1 py-3 px-6 rounded-lg font-medium text-sm transition-all duration-200 ${
-            currentView === 'drilldown'
+            currentView === 'detailed'
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900'
           }`}

@@ -84,8 +84,8 @@ export interface LandingPageProps {
 }
 
 export interface AnalysisTabsProps {
-  currentView: 'summary' | 'drilldown';
-  onViewChange: (view: 'summary' | 'drilldown') => void;
+  currentView: 'summary' | 'detailed';
+  onViewChange: (view: 'summary' | 'detailed') => void;
 }
 
 export interface LoadingSpinnerProps {
@@ -106,7 +106,7 @@ export interface SummaryViewProps {
   summaryData: SummaryData[];
 }
 
-export interface DrilldownViewProps {
+export interface DetailedViewProps {
   dayData: DayData[];
 }
 
@@ -176,7 +176,7 @@ export interface PresetButton {
 // ============================================================================
 
 export type DateField = 'start' | 'end';
-export type ViewType = 'summary' | 'drilldown';
+export type ViewType = 'summary' | 'detailed';
 
 export interface DateChangeHandler {
   (field: DateField, value: string): void;
