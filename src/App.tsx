@@ -9,7 +9,6 @@ import LandingPage from './components/Layout/LandingPage';
 import { ViewType } from './components/modals';
 import SummaryView from './components/SummaryView';
 import { useAuth } from './hooks/useAuth';
-import { usePatientData } from './hooks/usePatientData';
 import { useStorageListener } from './hooks/useStorageListener';
 
 function App() {
@@ -29,9 +28,6 @@ function App() {
 
   // Listen for logout events from other tabs
   useStorageListener();
-
-  // Create dateRange string for API
-  const dateRange = preset;
 
   // Show landing page if user is not authenticated
   if (!user) {
