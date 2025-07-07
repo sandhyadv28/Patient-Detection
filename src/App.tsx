@@ -77,7 +77,7 @@ function App() {
             {currentView === 'summary' ? (
               <SummaryView startDate={startDate} endDate={endDate} preset={preset} />
             ) : (
-              <DrilldownView preset={preset} />
+              <DrilldownView preset={preset} startDate={startDate} endDate={endDate} />
             )}
           </main>
 

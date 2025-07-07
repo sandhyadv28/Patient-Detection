@@ -11,9 +11,11 @@ import { formatDate } from '../utils/dataGenerator';
 
 type DrilldownViewProps = {
   preset: string;
+  startDate?: string;
+  endDate?: string;
 };
 
-export default function DrilldownView({ preset }: DrilldownViewProps) {
+export default function DrilldownView({ preset, startDate, endDate }: DrilldownViewProps) {
   const dispatch = useAppDispatch();
   const patientDetailedData = useAppSelector((state: RootState) => state.patient);
   const { detailedDayData = null, summaryData = null, isLoading = false, error = null, perSlotDetailedData = null, isPerSlotLoading = false } = patientDetailedData || {};
@@ -253,9 +255,9 @@ export default function DrilldownView({ preset }: DrilldownViewProps) {
         <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto mb-4">
           {daysArr.map((day, index, arr) => (
             <button
-              key={arr.length - 1 - index}
-              onClick={() => handleDayClick(arr.length - 1 - index)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeDay === (arr.length - 1 - index)
+              key={index}
+              onClick={() => handleDayClick(index)}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeDay === index
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
@@ -264,6 +266,11 @@ export default function DrilldownView({ preset }: DrilldownViewProps) {
             </button>
           ))}
         </div>
+        {preset === 'custom' && daysArr.length > 0 && (
+          <div className="mb-2 text-sm text-gray-700">
+            Date Range: {formatDate(daysArr[0].date)} to {formatDate(daysArr[daysArr.length - 1].date)} ({daysArr.length} days)
+          </div>
+        )}
 
         <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
           <p className="text-blue-800 font-medium">
