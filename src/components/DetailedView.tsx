@@ -44,7 +44,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       const { start, end } = getDatePresetRange(preset);
       const startDateStr = start.format('YYYY-MM-DD');
       const endDateStr = end.format('YYYY-MM-DD');
-      
+
       dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
     } else if (preset === 'custom' && startDate && endDate) {
       dispatch(fetchPatientSummary({ startDate, endDate }));
@@ -57,12 +57,12 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
   const handleRetry = () => {
     dispatch(clearError());
-    
+
     if (preset && preset !== 'custom') {
       const { start, end } = getDatePresetRange(preset);
       const startDateStr = start.format('YYYY-MM-DD');
       const endDateStr = end.format('YYYY-MM-DD');
-      
+
       dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
     } else if (preset === 'custom' && startDate && endDate) {
       dispatch(fetchPatientSummary({ startDate, endDate }));
@@ -142,11 +142,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   const handleClosePhotoModal = () => {
     setPhotoModal(null);
   };
-
-  // Show loading state
-  if (isLoading) {
-    return <LoadingSpinner size="lg" message="Loading detailed data..." />;
-  }
 
   // Show error state
   if (error) {
@@ -255,7 +250,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     const start = moment(startDate);
     const end = moment(endDate);
     const daysDiff = end.diff(start, 'days') + 1; // +1 to include both start and end dates
-    
+
     daysArr = [];
     for (let i = 0; i < daysDiff; i++) {
       const currentDate = start.clone().add(i, 'days').format('YYYY-MM-DD');
@@ -319,7 +314,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
-              Day {index + 1} 
+              Day {index + 1}
             </button>
           ))}
         </div>
@@ -336,163 +331,172 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          <LoadingSpinner size="lg" message="Loading detailed data..." />
+        </div>
+      )}
+
       {/* Time Slot Details */}
-      <div className="space-y-4">
-        {slotKeys.map((slotKey, idx) => {
-          const slotData = selectedDayObj[slotKey];
-          const { label, overall } = slotData || {};
-          const slotInfo = {
-            label: label || `Slot ${idx + 1}`,
-            total_entries: overall?.total_entries || 0,
-            total_detections: overall?.total_detections || 0,
-            total_undetected: overall?.total_undetected || 0,
-            detection_rate: overall?.detection_rate || 0,
-            undetected_rate: overall?.undetected_rate || 0
-          };
+      {!isLoading && (
+        <div className="space-y-4">
+          {slotKeys.map((slotKey, idx) => {
+            const slotData = selectedDayObj[slotKey];
+            const { label, overall } = slotData || {};
+            const slotInfo = {
+              label: label || `Slot ${idx + 1}`,
+              total_entries: overall?.total_entries || 0,
+              total_detections: overall?.total_detections || 0,
+              total_undetected: overall?.total_undetected || 0,
+              detection_rate: overall?.detection_rate || 0,
+              undetected_rate: overall?.undetected_rate || 0
+            };
 
-          return (
-            <div key={slotKey} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              {/* Time Slot Header */}
-              <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Calendar className="text-blue-600" size={16} />
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900">
-                        {slotInfo.label}
-                      </h4>
-                      <p className="text-sm text-gray-600">Time slot analysis</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleSlotExpansion(slotInfo.label, slotKey); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-gray-700 hover:bg-gray-100 transition-all border border-gray-200"
-                  >
-                    {expandedSlots.has(slotInfo.label) ? (
-                      <>
-                        <ChevronDown size={16} />
-                        Hide Details
-                      </>
-                    ) : (
-                      <>
-                        <ChevronRight size={16} />
-                        Show Details
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Summary Stats */}
-              <div className="p-6">
-                <div className="grid grid-cols-4 gap-6">
-                  <div className="text-center p-4 bg-gray-50 rounded-xl">
-                    <p className="text-2xl font-bold text-gray-900">{slotInfo.total_entries}</p>
-                    <p className="text-sm text-gray-600 mt-1">Total Detections</p>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-xl">
-                    <p className="text-2xl font-bold text-green-600">{slotInfo.detection_rate}%</p>
-                    <p className="text-sm text-green-600 mt-1">Detected ({slotInfo.total_detections})</p>
-                  </div>
-                  <div className="text-center p-4 bg-red-50 rounded-xl">
-                    <p className="text-2xl font-bold text-red-600">{slotInfo.undetected_rate}%</p>
-                    <p className="text-sm text-red-600 mt-1">Not Detected ({slotInfo.total_undetected})</p>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-xl">
-                    <p className="text-2xl font-bold text-orange-600">0%</p>
-                    <p className="text-sm text-orange-600 mt-1">Ambiguous (0)</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Detailed Records */}
-              {expandedSlots.has(slotInfo.label) && (
-                <div className="border-t border-gray-200">
-                  <div className="p-6">
-                    <h5 className="text-lg font-semibold text-gray-900 mb-4">Bed Details</h5>
-                    {isPerSlotLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <LoadingSpinner size="md" message="Loading bed details..." />
+            return (
+              <div key={slotKey} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                {/* Time Slot Header */}
+                <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Calendar className="text-blue-600" size={16} />
                       </div>
-                    ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
-                      (() => {
-                        // Find the slot data for the current slotKey
-                        const dayData = perSlotDetailedData[0];
-                        const slotData = dayData[slotKey];
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">
+                          {slotInfo.label}
+                        </h4>
+                        <p className="text-sm text-gray-600">Time slot analysis</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleSlotExpansion(slotInfo.label, slotKey); }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-gray-700 hover:bg-gray-100 transition-all border border-gray-200"
+                    >
+                      {expandedSlots.has(slotInfo.label) ? (
+                        <>
+                          <ChevronDown size={16} />
+                          Hide Details
+                        </>
+                      ) : (
+                        <>
+                          <ChevronRight size={16} />
+                          Show Details
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-                        if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
-                          return (
-                            <div className="overflow-x-auto">
-                              <table className="w-full">
-                                <thead className="bg-gray-50">
-                                  <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                      Bed No.
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                      Detection Status
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                      View Photo
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                  {slotData.per_bed.map((bed, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                      <td className="px-4 py-3 whitespace-nowrap">
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                          Bed {bed.bed_no}
-                                        </span>
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-center">
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(bed.detection_status ? 'Yes' : 'No')}`}>
-                                          {bed.detection_status ? 'Yes' : 'No'}
-                                        </span>
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-center">
-                                        {bed.imageURL ? (
-                                          <button
-                                            onClick={() => handleViewPhoto(bed.imageURL!)}
-                                            className="inline-flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-700 transition-colors"
-                                          >
-                                            <Eye size={14} />
-                                            View Photo
-                                          </button>
-                                        ) : (
-                                          <span className="text-gray-400 text-sm">
-                                            No photo available
-                                          </span>
-                                        )}
-                                      </td>
+                {/* Summary Stats */}
+                <div className="p-6">
+                  <div className="grid grid-cols-4 gap-6">
+                    <div className="text-center p-4 bg-gray-50 rounded-xl">
+                      <p className="text-2xl font-bold text-gray-900">{slotInfo.total_entries}</p>
+                      <p className="text-sm text-gray-600 mt-1">Total Detections</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-xl">
+                      <p className="text-2xl font-bold text-green-600">{slotInfo.detection_rate}%</p>
+                      <p className="text-sm text-green-600 mt-1">Detected ({slotInfo.total_detections})</p>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-xl">
+                      <p className="text-2xl font-bold text-red-600">{slotInfo.undetected_rate}%</p>
+                      <p className="text-sm text-red-600 mt-1">Not Detected ({slotInfo.total_undetected})</p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-xl">
+                      <p className="text-2xl font-bold text-orange-600">0%</p>
+                      <p className="text-sm text-orange-600 mt-1">Ambiguous (0)</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detailed Records */}
+                {expandedSlots.has(slotInfo.label) && (
+                  <div className="border-t border-gray-200">
+                    <div className="p-6">
+                      <h5 className="text-lg font-semibold text-gray-900 mb-4">Bed Details</h5>
+                      {isPerSlotLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <LoadingSpinner size="md" message="Loading bed details..." />
+                        </div>
+                      ) : perSlotDetailedData && perSlotDetailedData.length > 0 ? (
+                        (() => {
+                          // Find the slot data for the current slotKey
+                          const dayData = perSlotDetailedData[0];
+                          const slotData = dayData[slotKey];
+
+                          if (slotData && slotData.per_bed && Array.isArray(slotData.per_bed) && slotData.per_bed.length > 0) {
+                            return (
+                              <div className="overflow-x-auto">
+                                <table className="w-full">
+                                  <thead className="bg-gray-50">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Bed No.
+                                      </th>
+                                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Detection Status
+                                      </th>
+                                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        View Photo
+                                      </th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          );
-                        } else {
-                          return (
-                            <div className="text-center py-8">
-                              <p className="text-gray-600">No bed details available for this time slot.</p>
-                            </div>
-                          );
-                        }
-                      })()
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-600">No bed details available for this time slot.</p>
-                      </div>
-                    )}
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {slotData.per_bed.map((bed, index) => (
+                                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            Bed {bed.bed_no}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(bed.detection_status ? 'Yes' : 'No')}`}>
+                                            {bed.detection_status ? 'Yes' : 'No'}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                                          {bed.imageURL ? (
+                                            <button
+                                              onClick={() => handleViewPhoto(bed.imageURL!)}
+                                              className="inline-flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-700 transition-colors"
+                                            >
+                                              <Eye size={14} />
+                                              View Photo
+                                            </button>
+                                          ) : (
+                                            <span className="text-gray-400 text-sm">
+                                              No photo available
+                                            </span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="text-center py-8">
+                                <p className="text-gray-600">No bed details available for this time slot.</p>
+                              </div>
+                            );
+                          }
+                        })()
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-gray-600">No bed details available for this time slot.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Photo Modal */}
       {photoModal && (
