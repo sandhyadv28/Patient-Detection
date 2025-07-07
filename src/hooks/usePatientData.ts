@@ -30,7 +30,7 @@ export function usePatientData(): UsePatientDataReturn {
     totalBeds: day.total_entries,
     detected: day.total_detections,
     notDetected: day.total_undetected,
-    ambiguous: 0, 
+    ambiguous: 0,
     detectedPercentage: day.detection_rate,
     notDetectedPercentage: day.undetected_rate,
     ambiguousPercentage: 0,
@@ -39,6 +39,7 @@ export function usePatientData(): UsePatientDataReturn {
   const convertedDayData: any[] = [];
 
   const handleDateRangeChange = (start: string, end: string) => {
+    console.log('usePatientData - handleDateRangeChange:', start, 'to', end);
     setStartDate(start);
     setEndDate(end);
 
@@ -48,6 +49,7 @@ export function usePatientData(): UsePatientDataReturn {
   };
 
   const handlePresetChange = (newPreset: DatePreset) => {
+    console.log('usePatientData - handlePresetChange:', newPreset);
     setPreset(newPreset);
 
     if (newPreset !== 'custom') {
@@ -55,6 +57,7 @@ export function usePatientData(): UsePatientDataReturn {
       const startDateStr = start.format('YYYY-MM-DD');
       const endDateStr = end.format('YYYY-MM-DD');
 
+      console.log('usePatientData - preset dates:', startDateStr, 'to', endDateStr);
       setStartDate(startDateStr);
       setEndDate(endDateStr);
 

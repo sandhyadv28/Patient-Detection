@@ -5,9 +5,9 @@ import ErrorMessage from '../_common/ErrorMessage';
 import LoadingSpinner from '../_common/LoadingSpinner';
 import { API } from '../service';
 import { useAppDispatch, useAppSelector } from '../store/hook';
-import { clearError, fetchDetailedData, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
+import { clearError, fetchDetailedData, fetchPatientSummary, fetchPerSlotDetailedData } from '../store/slice/patientSlice';
 import { RootState } from '../store/store';
-import { formatDate } from '../utils/dataGenerator';
+import { formatDate, getDatePresetRange } from '../utils/dataGenerator';
 
 type DetailedViewProps = {
   preset: string;
@@ -15,7 +15,7 @@ type DetailedViewProps = {
   endDate?: string;
 };
 
-export default function DetailedView({ preset }: DetailedViewProps) {
+export default function DetailedView({ preset, startDate, endDate }: DetailedViewProps) {
   const dispatch = useAppDispatch();
   const patientDetailedData = useAppSelector((state: RootState) => state.patient);
   const { detailedDayData = null, summaryData = null, isLoading = false, error = null, perSlotDetailedData = null, isPerSlotLoading = false } = patientDetailedData || {};
@@ -26,10 +26,37 @@ export default function DetailedView({ preset }: DetailedViewProps) {
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
 
-  // Fetch detailed data when component mounts
+  // Fetch detailed data when component mounts or when summary data changes
   useEffect(() => {
-    dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
-  }, [dispatch]);
+    if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > 0) {
+      // Fetch detailed data for the first day in the range
+      const firstDayDate = summaryData.daily_breakdown[0].date;
+      dispatch(fetchDetailedData(firstDayDate));
+    } else {
+      // Fallback to today's date if no summary data
+      dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
+    }
+  }, [dispatch, summaryData]);
+
+  // Handle preset changes and fetch summary data with date range
+  useEffect(() => {
+    console.log('useEffect triggered - preset:', preset, 'startDate:', startDate, 'endDate:', endDate);
+    
+    if (preset && preset !== 'custom') {
+      const { start, end } = getDatePresetRange(preset);
+      const startDateStr = start.format('YYYY-MM-DD');
+      const endDateStr = end.format('YYYY-MM-DD');
+      
+      console.log('Fetching preset data - startDate:', startDateStr, 'endDate:', endDateStr);
+      dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
+    } else if (preset === 'custom' && startDate && endDate) {
+      // For custom preset, use the provided startDate and endDate
+      console.log('Fetching custom data - startDate:', startDate, 'endDate:', endDate);
+      dispatch(fetchPatientSummary({ startDate, endDate }));
+    } else {
+      console.log('No valid date range found for API call');
+    }
+  }, [dispatch, preset, startDate, endDate]);
 
   // Reset activeDay when summaryData changes (date range changes)
   useEffect(() => {
@@ -38,7 +65,19 @@ export default function DetailedView({ preset }: DetailedViewProps) {
 
   const handleRetry = () => {
     dispatch(clearError());
-    dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
+    
+    if (preset && preset !== 'custom') {
+      const { start, end } = getDatePresetRange(preset);
+      const startDateStr = start.format('YYYY-MM-DD');
+      const endDateStr = end.format('YYYY-MM-DD');
+      
+      dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
+    } else if (preset === 'custom' && startDate && endDate) {
+      dispatch(fetchPatientSummary({ startDate, endDate }));
+    } else {
+      // Fallback to today's date for detailed data
+      dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
+    }
   };
 
   const handleDayClick = (dayIndex: number) => {
@@ -197,6 +236,8 @@ export default function DetailedView({ preset }: DetailedViewProps) {
   console.log('Original daily_breakdown:', summaryData?.daily_breakdown);
   console.log('Reversed daysArr:', daysArr);
   console.log('preset:', preset);
+  console.log('startDate from props:', startDate);
+  console.log('endDate from props:', endDate);
 
   if (preset === 'previousMonth') {
     // Generate all days of the previous month using moment
@@ -222,18 +263,51 @@ export default function DetailedView({ preset }: DetailedViewProps) {
         }
       );
     }
+  } else if (preset === 'custom' && startDate && endDate) {
+    // For custom preset, generate days based on the selected date range
+    console.log('Generating custom date range from:', startDate, 'to:', endDate);
+    const start = moment(startDate);
+    const end = moment(endDate);
+    const daysDiff = end.diff(start, 'days') + 1; // +1 to include both start and end dates
+    
+    daysArr = [];
+    for (let i = 0; i < daysDiff; i++) {
+      const currentDate = start.clone().add(i, 'days').format('YYYY-MM-DD');
+      // Try to find data for this date in summaryData.daily_breakdown
+      const backendDay = summaryData?.daily_breakdown?.find(d => d.date === currentDate);
+      daysArr.push(
+        backendDay || {
+          date: currentDate,
+          hospital: '',
+          hospital_unit: '',
+          total_entries: 0,
+          total_detections: 0,
+          total_undetected: 0,
+          detection_rate: 0,
+          undetected_rate: 0,
+        }
+      );
+    }
+    console.log('Generated custom days array:', daysArr);
   } else {
-    const expectedDays = preset === 'last30' ? 30 : 7;
-    if (daysArr.length !== expectedDays) {
-      const missing = expectedDays - daysArr.length;
-      let oldestDate = daysArr.length > 0 ? daysArr[daysArr.length - 1].date : moment().format('YYYY-MM-DD');
-      for (let i = 1; i <= Math.abs(missing); i++) {
-        const padDate = moment(oldestDate).subtract(i, 'days').format('YYYY-MM-DD');
-        console.log('Padding with date:', padDate);
-        daysArr.push({ date: padDate } as any);
+    // For custom preset, use the actual data without padding
+    if (preset === 'custom') {
+      // Just use the actual days from the backend without any padding
+      daysArr = summaryData?.daily_breakdown?.slice().reverse() || [];
+    } else {
+      // For preset-based ranges (last7, last30), pad if needed
+      const expectedDays = preset === 'last30' ? 30 : 7;
+      if (daysArr.length !== expectedDays) {
+        const missing = expectedDays - daysArr.length;
+        let oldestDate = daysArr.length > 0 ? daysArr[daysArr.length - 1].date : moment().format('YYYY-MM-DD');
+        for (let i = 1; i <= Math.abs(missing); i++) {
+          const padDate = moment(oldestDate).subtract(i, 'days').format('YYYY-MM-DD');
+          console.log('Padding with date:', padDate);
+          daysArr.push({ date: padDate } as any);
+        }
+        // After padding, sort so most recent is first, then slice to expectedDays
+        daysArr = daysArr.sort((a, b) => moment(b.date).diff(moment(a.date))).slice(0, expectedDays);
       }
-      // After padding, sort so most recent is first, then slice to expectedDays
-      daysArr = daysArr.sort((a, b) => moment(b.date).diff(moment(a.date))).slice(0, expectedDays);
     }
   }
   console.log('Final daysArr for rendering:', daysArr);

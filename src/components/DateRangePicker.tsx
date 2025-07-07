@@ -15,25 +15,28 @@ export default function DateRangePicker({
   const dispatch = useAppDispatch();
 
   const handlePresetClick = (newPreset: DatePreset) => {
+    console.log('DateRangePicker - handlePresetClick called with:', newPreset);
     onPresetChange(newPreset);
 
     if (newPreset !== 'custom') {
       const { start, end } = getDatePresetRange(newPreset);
 
       const startDateStr = start.format('YYYY-MM-DD');
-      const endDateStr = end.clone().add(1, 'day').format('YYYY-MM-DD');
+      const endDateStr = end.format('YYYY-MM-DD');
 
+      console.log('DateRangePicker - preset dates:', startDateStr, 'to', endDateStr);
       onDateRangeChange(startDateStr, endDateStr);
-      
+
       dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
     }
   };
 
   const handleCustomDateChange = (field: DateField, value: string) => {
-    
+    console.log('DateRangePicker - handleCustomDateChange:', field, value);
+
     let newStartDate = startDate;
     let newEndDate = endDate;
-    
+
     if (field === 'start') {
       newStartDate = value;
       onDateRangeChange(value, endDate);
@@ -41,11 +44,12 @@ export default function DateRangePicker({
       newEndDate = value;
       onDateRangeChange(startDate, value);
     }
-    
+
     onPresetChange('custom');
-    
+
     // If both dates are selected, trigger API call
     if (newStartDate && newEndDate) {
+      console.log('DateRangePicker - custom date range:', newStartDate, 'to', newEndDate);
       dispatch(fetchPatientSummary({ startDate: newStartDate, endDate: newEndDate }));
     }
   };
@@ -67,17 +71,16 @@ export default function DateRangePicker({
           Date Range Selection
         </h3>
       </div>
-      
+
       <div className="flex flex-wrap gap-3 mb-4">
         {presetButtons.map(button => (
           <button
             key={button.key}
             onClick={() => handlePresetClick(button.key)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              preset === button.key
+            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${preset === button.key
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-            }`}
+              }`}
           >
             {button.label}
           </button>
@@ -90,16 +93,16 @@ export default function DateRangePicker({
             <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 mb-2">
               Start Date
             </label>
-            <DatePicker 
-            value={startDate} 
+            <DatePicker
+              value={startDate}
               onChange={(value) => handleCustomDateChange('start', value)}
-           />
+            />
           </div>
           <div className="flex-1">
             <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 mb-2">
               End Date
             </label>
-            <DatePicker 
+            <DatePicker
               value={endDate}
               onChange={(value) => handleCustomDateChange('end', value)}
             />
