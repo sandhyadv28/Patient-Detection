@@ -40,25 +40,17 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
   // Handle preset changes and fetch summary data with date range
   useEffect(() => {
-    console.log('useEffect triggered - preset:', preset, 'startDate:', startDate, 'endDate:', endDate);
-    
     if (preset && preset !== 'custom') {
       const { start, end } = getDatePresetRange(preset);
       const startDateStr = start.format('YYYY-MM-DD');
       const endDateStr = end.format('YYYY-MM-DD');
       
-      console.log('Fetching preset data - startDate:', startDateStr, 'endDate:', endDateStr);
       dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
     } else if (preset === 'custom' && startDate && endDate) {
-      // For custom preset, use the provided startDate and endDate
-      console.log('Fetching custom data - startDate:', startDate, 'endDate:', endDate);
       dispatch(fetchPatientSummary({ startDate, endDate }));
-    } else {
-      console.log('No valid date range found for API call');
     }
   }, [dispatch, preset, startDate, endDate]);
 
-  // Reset activeDay when summaryData changes (date range changes)
   useEffect(() => {
     setActiveDay(0);
   }, [summaryData]);
@@ -233,11 +225,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   };
 
   let daysArr = summaryData?.daily_breakdown?.slice().reverse() || [];
-  console.log('Original daily_breakdown:', summaryData?.daily_breakdown);
-  console.log('Reversed daysArr:', daysArr);
-  console.log('preset:', preset);
-  console.log('startDate from props:', startDate);
-  console.log('endDate from props:', endDate);
 
   if (preset === 'previousMonth') {
     // Generate all days of the previous month using moment
@@ -265,7 +252,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     }
   } else if (preset === 'custom' && startDate && endDate) {
     // For custom preset, generate days based on the selected date range
-    console.log('Generating custom date range from:', startDate, 'to:', endDate);
     const start = moment(startDate);
     const end = moment(endDate);
     const daysDiff = end.diff(start, 'days') + 1; // +1 to include both start and end dates
@@ -288,7 +274,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
         }
       );
     }
-    console.log('Generated custom days array:', daysArr);
   } else {
     // For custom preset, use the actual data without padding
     if (preset === 'custom') {
@@ -302,7 +287,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
         let oldestDate = daysArr.length > 0 ? daysArr[daysArr.length - 1].date : moment().format('YYYY-MM-DD');
         for (let i = 1; i <= Math.abs(missing); i++) {
           const padDate = moment(oldestDate).subtract(i, 'days').format('YYYY-MM-DD');
-          console.log('Padding with date:', padDate);
           daysArr.push({ date: padDate } as any);
         }
         // After padding, sort so most recent is first, then slice to expectedDays
@@ -310,7 +294,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       }
     }
   }
-  console.log('Final daysArr for rendering:', daysArr);
 
   return (
     <div className="space-y-4">
@@ -366,8 +349,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
             detection_rate: overall?.detection_rate || 0,
             undetected_rate: overall?.undetected_rate || 0
           };
-
-          // Debug logs for label issue
 
           return (
             <div key={slotKey} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
