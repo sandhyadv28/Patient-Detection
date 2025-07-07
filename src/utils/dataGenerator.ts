@@ -26,7 +26,6 @@ export function formatDate(dateString: string): string {
     return date.format('MMM DD, YYYY');
   } catch (error) {
     console.warn('Date formatting warning:', error, 'Input:', dateString);
-    // Return the original string instead of throwing error
     return dateString;
   }
 }
