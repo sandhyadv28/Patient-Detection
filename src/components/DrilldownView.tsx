@@ -9,7 +9,11 @@ import { clearError, fetchDetailedDrilldownData, fetchPerSlotDetailedData } from
 import { RootState } from '../store/store';
 import { formatDate } from '../utils/dataGenerator';
 
-export default function DrilldownView() {
+type DrilldownViewProps = {
+  preset: string;
+};
+
+export default function DrilldownView({ preset }: DrilldownViewProps) {
   const dispatch = useAppDispatch();
   const patientDetailedData = useAppSelector((state: RootState) => state.patient);
   const { detailedDayData = null, summaryData = null, isLoading = false, error = null, perSlotDetailedData = null, isPerSlotLoading = false } = patientDetailedData || {};
@@ -24,6 +28,11 @@ export default function DrilldownView() {
   useEffect(() => {
     dispatch(fetchDetailedDrilldownData(moment().format('YYYY-MM-DD')));
   }, [dispatch]);
+
+  // Reset activeDay when summaryData changes (date range changes)
+  useEffect(() => {
+    setActiveDay(0);
+  }, [summaryData]);
 
   const handleRetry = () => {
     dispatch(clearError());
@@ -41,7 +50,9 @@ export default function DrilldownView() {
     if (selectedDate) {
       dispatch(fetchDetailedDrilldownData(selectedDate));
     } else {
-      const calculatedDate = moment().subtract(12 - dayIndex, 'days').format('YYYY-MM-DD');
+      // Use the actual number of days for fallback calculation
+      const numberOfDays = summaryData?.daily_breakdown?.length || 7;
+      const calculatedDate = moment().subtract(numberOfDays - 1 - dayIndex, 'days').format('YYYY-MM-DD');
       dispatch(fetchDetailedDrilldownData(calculatedDate));
     }
   };
@@ -60,7 +71,9 @@ export default function DrilldownView() {
       if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
         selectedDate = summaryData.daily_breakdown[activeDay].date;
       } else {
-        selectedDate = moment().subtract(12 - activeDay, 'days').format('YYYY-MM-DD');
+        // Use the actual number of days for fallback calculation
+        const numberOfDays = summaryData?.daily_breakdown?.length || 7;
+        selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
       }
 
       // Call the per-slot API
@@ -138,14 +151,35 @@ export default function DrilldownView() {
 
   type SlotData = { label?: string; overall?: { total_entries?: number; total_detections?: number; total_undetected?: number; detection_rate?: number; undetected_rate?: number } };
   type DayObj = { [key: string]: SlotData };
-  const days: DayObj[] = (detailedDayData || []).slice(0, 7);
-  const selectedDayObj: DayObj = Object.assign({}, ...days);
+  
+  // Use the actual number of days from summaryData.daily_breakdown instead of hardcoding to 7
+  const numberOfDays = summaryData?.daily_breakdown?.length || 7;
+  
+  // Safety check: ensure activeDay doesn't exceed available days
+  if (activeDay >= numberOfDays) {
+    setActiveDay(0);
+  }
+  
+  // Create days array from summaryData.daily_breakdown instead of detailedDayData
+  // detailedDayData is for time slots, not days
+  const days: DayObj[] = summaryData?.daily_breakdown?.map((day, index) => {
+    // Create a placeholder object for each day that matches DayObj type
+    // The actual slot data will be loaded when a day is clicked
+    return {
+      // Empty object that will be populated with slot data when day is selected
+    } as DayObj;
+  }) || [];
+  
+  // For the selected day, we still need the detailed slot data
+  const selectedDayObj: DayObj = Object.assign({}, ...(detailedDayData || []));
 
   let selectedDate = '';
   if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
     selectedDate = summaryData.daily_breakdown[activeDay].date;
   } else {
-    selectedDate = moment().subtract(12 - activeDay, 'days').format('YYYY-MM-DD');
+    // Use the actual number of days for fallback calculation
+    const numberOfDays = summaryData?.daily_breakdown?.length || 7;
+    selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
   }
 
   const getStatusColor = (status: string) => {
@@ -156,6 +190,51 @@ export default function DrilldownView() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  let daysArr = summaryData?.daily_breakdown?.slice().reverse() || [];
+  console.log('Original daily_breakdown:', summaryData?.daily_breakdown);
+  console.log('Reversed daysArr:', daysArr);
+  console.log('preset:', preset);
+
+  if (preset === 'previousMonth') {
+    // Generate all days of the previous month using moment
+    const prevMonth = moment().subtract(1, 'month');
+    const startOfPrevMonth = prevMonth.clone().startOf('month');
+    const endOfPrevMonth = prevMonth.clone().endOf('month');
+    const daysInPrevMonth = endOfPrevMonth.date();
+    daysArr = [];
+    for (let i = daysInPrevMonth; i >= 1; i--) {
+      const date = startOfPrevMonth.clone().date(i).format('YYYY-MM-DD');
+      // Try to find data for this date in summaryData.daily_breakdown
+      const backendDay = summaryData?.daily_breakdown?.find(d => d.date === date);
+      daysArr.push(
+        backendDay || {
+          date,
+          hospital: '',
+          hospital_unit: '',
+          total_entries: 0,
+          total_detections: 0,
+          total_undetected: 0,
+          detection_rate: 0,
+          undetected_rate: 0,
+        }
+      );
+    }
+  } else {
+    const expectedDays = preset === 'last30' ? 30 : 7;
+    if (daysArr.length !== expectedDays) {
+      const missing = expectedDays - daysArr.length;
+      let oldestDate = daysArr.length > 0 ? daysArr[daysArr.length - 1].date : moment().format('YYYY-MM-DD');
+      for (let i = 1; i <= Math.abs(missing); i++) {
+        const padDate = moment(oldestDate).subtract(i, 'days').format('YYYY-MM-DD');
+        console.log('Padding with date:', padDate);
+        daysArr.push({ date: padDate } as any);
+      }
+      // After padding, sort so most recent is first, then slice to expectedDays
+      daysArr = daysArr.sort((a, b) => moment(b.date).diff(moment(a.date))).slice(0, expectedDays);
+    }
+  }
+  console.log('Final daysArr for rendering:', daysArr);
 
   return (
     <div className="space-y-4">
@@ -172,16 +251,16 @@ export default function DrilldownView() {
 
         {/* Day Tabs */}
         <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto mb-4">
-          {days.map((_, index) => (
+          {daysArr.map((day, index, arr) => (
             <button
-              key={index}
-              onClick={() => handleDayClick(index)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeDay === index
+              key={arr.length - 1 - index}
+              onClick={() => handleDayClick(arr.length - 1 - index)}
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeDay === (arr.length - 1 - index)
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                 }`}
             >
-              Day {index + 1}
+              Day {index + 1} ({formatDate(day.date)})
             </button>
           ))}
         </div>

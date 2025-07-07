@@ -1,13 +1,13 @@
 import { useState } from 'react';
+import AuthInitializer from './components/AuthInitializer';
 import DateRangePicker from './components/DateRangePicker';
 import DrilldownView from './components/DrilldownView';
+import ViewToggle from './components/Layout/AnalysisTabs';
 import Footer from './components/Layout/Footer';
 import Header from './components/Layout/Header';
 import LandingPage from './components/Layout/LandingPage';
-import ViewToggle from './components/Layout/AnalysisTabs';
-import SummaryView from './components/SummaryView';
-import AuthInitializer from './components/AuthInitializer';
 import { ViewType } from './components/modals';
+import SummaryView from './components/SummaryView';
 import { useAuth } from './hooks/useAuth';
 import { usePatientData } from './hooks/usePatientData';
 import { useStorageListener } from './hooks/useStorageListener';
@@ -77,7 +77,7 @@ function App() {
             {currentView === 'summary' ? (
               <SummaryView startDate={startDate} endDate={endDate} preset={preset} />
             ) : (
-              <DrilldownView />
+              <DrilldownView preset={preset} />
             )}
           </main>
 

@@ -1,10 +1,9 @@
-import React from 'react';
 import { Calendar } from 'lucide-react';
-import { getDatePresetRange } from '../utils/dataGenerator';
-import { DatePreset, DateRangePickerProps, PresetButton, DateField } from './modals';
 import DatePicker from '../_common/DatePicker';
 import { useAppDispatch } from '../store/hook';
 import { fetchPatientSummary } from '../store/slice/patientSlice';
+import { getDatePresetRange } from '../utils/dataGenerator';
+import { DateField, DatePreset, DateRangePickerProps, PresetButton } from './modals';
 
 export default function DateRangePicker({
   startDate,
@@ -21,12 +20,12 @@ export default function DateRangePicker({
     if (newPreset !== 'custom') {
       const { start, end } = getDatePresetRange(newPreset);
 
-      const adjustedEnd = end.clone().add(1, 'day');
-
       const startDateStr = start.format('YYYY-MM-DD');
-      const endDateStr = adjustedEnd.format('YYYY-MM-DD');
+      const endDateStr = end.clone().add(1, 'day').format('YYYY-MM-DD');
 
       onDateRangeChange(startDateStr, endDateStr);
+      
+      dispatch(fetchPatientSummary({ startDate: startDateStr, endDate: endDateStr }));
     }
   };
 
