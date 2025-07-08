@@ -137,6 +137,7 @@ interface PatientState {
   detailedDayData: DetailedResponse['data'] | null;
   perSlotDetailedData: PerSlotDetailedDay[] | null;
   isLoading: boolean;
+  isLoadingDetailed: boolean;
   isPerSlotLoading: boolean;
   error: string | null;
 }
@@ -147,6 +148,7 @@ const initialState: PatientState = {
   detailedDayData: null,
   perSlotDetailedData: null,
   isLoading: false,
+  isLoadingDetailed: false,
   isPerSlotLoading: false,
   error: null,
 };
@@ -169,6 +171,7 @@ const patientSlice = createSlice({
     setDetailedDayData: createSetState<'detailedDayData', PatientState>('detailedDayData'),
     setPerSlotDetailedData: createSetState<'perSlotDetailedData', PatientState>('perSlotDetailedData'),
     setLoading: createSetState<'isLoading', PatientState>('isLoading'),
+    setLoadingDetailed: createSetState<'isLoadingDetailed', PatientState>('isLoadingDetailed'),
     setPerSlotLoading: createSetState<'isPerSlotLoading', PatientState>('isPerSlotLoading'),
     setError: createSetState<'error', PatientState>('error'),
   },
@@ -191,16 +194,16 @@ const patientSlice = createSlice({
       
       // Handle fetchDetailedData
       .addCase(fetchDetailedData.pending, (state) => {
-        state.isLoading = true;
+        state.isLoadingDetailed = true;
         state.error = null;
       })
       .addCase(fetchDetailedData.fulfilled, (state, action) => {
-        state.isLoading = false;
+        state.isLoadingDetailed = false;
         state.detailedDayData = action.payload;
         state.error = null;
       })
       .addCase(fetchDetailedData.rejected, (state, action) => {
-        state.isLoading = false;
+        state.isLoadingDetailed = false;
         state.error = action.payload as string;
       })
       
@@ -230,6 +233,7 @@ export const {
   setDetailedDayData, 
   setPerSlotDetailedData, 
   setLoading, 
+  setLoadingDetailed,
   setPerSlotLoading, 
   setError 
 } = patientSlice.actions;
