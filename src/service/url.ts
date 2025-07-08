@@ -1,7 +1,8 @@
 import { config } from '../utils/utils';
 import { environment } from '../environments/environment.staging';
+import { getToken } from '../utils/localStorage.util';
 
-
+const token = getToken() || '';
 
 // API configuration constants
 export const API_CONFIG = {
@@ -10,6 +11,7 @@ export const API_CONFIG = {
         'hospital-name': 'Adarsha Hospital - Karimnagar',
         'hospital-unit': 'ICU',
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
     }
 }
 

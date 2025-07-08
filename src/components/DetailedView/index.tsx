@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hook';
 import { clearError, clearPerSlotDetailedData, fetchDetailedData, fetchPatientSummary, fetchPerSlotDetailedData } from '../../store/slice/patientSlice';
 import { RootState } from '../../store/store';
 import { getDatePresetRange } from '../../utils/dataGenerator';
+import { API } from '../../service';
 import DayHeader from './DayHeader';
 import PhotoModal from './PhotoModal';
 import TimeSlotCard from './TimeSlotCard';
@@ -130,16 +131,23 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     setImageError(null);
 
     try {
-      // Simulate image loading - replace with actual API call if needed
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Fetching image for key:', imageKey);
+      const imageUrl = await API.fetchPatientImage(imageKey);
+      console.log('Image URL received:', imageUrl);
+      setPhotoModal(imageUrl);
       setIsImageLoading(false);
     } catch (error) {
       setIsImageLoading(false);
-      setImageError('Failed to load image');
+      setImageError(error instanceof Error ? error.message : 'Failed to load image');
+      console.error('Error fetching image:', error);
     }
   };
 
   const handleClosePhotoModal = () => {
+    // Clean up blob URL if it exists
+    if (photoModal && photoModal.startsWith('blob:')) {
+      URL.revokeObjectURL(photoModal);
+    }
     setPhotoModal(null);
     setIsImageLoading(false);
     setImageError(null);
