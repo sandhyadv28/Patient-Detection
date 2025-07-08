@@ -131,15 +131,12 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     setImageError(null);
 
     try {
-      console.log('Fetching image for key:', imageKey);
       const imageUrl = await API.fetchPatientImage(imageKey);
-      console.log('Image URL received:', imageUrl);
       setPhotoModal(imageUrl);
       setIsImageLoading(false);
     } catch (error) {
       setIsImageLoading(false);
       setImageError(error instanceof Error ? error.message : 'Failed to load image');
-      console.error('Error fetching image:', error);
     }
   };
 

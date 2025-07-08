@@ -17,7 +17,6 @@ async function fetchSummaryData({ startDate, endDate }: {
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching summary data:", error);
     throw error;
   }
 }
@@ -32,7 +31,6 @@ async function fetchDetailedData(date: string) {
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching detailed data:", error);
     throw error;
   }
 }
@@ -56,7 +54,6 @@ async function fetchPerSlotData(date: string, slotKey?: string) {
     
     return response.data;
   } catch (error) {
-    console.error("Error fetching per-slot data:", error);
     throw error;
   }
 }
@@ -77,7 +74,6 @@ async function fetchPatientImage(imageKey: string): Promise<string> {
     
     return response.data.url;
   } catch (error) {
-    console.error("Error fetching patient image:", error);
     throw error;
   }
 }
@@ -91,7 +87,6 @@ async function getNewToken(refreshToken: string | null) {
     const data = await get(`${URLS.GET_NEW_TOKEN}?x-refresh-token=${refreshToken}`);
     return APIResponse.success<any>(data);
   } catch (error) {
-    console.error("Error while fetching new token", error);
     return APIResponse.error(error);
   }
 }
