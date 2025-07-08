@@ -72,7 +72,6 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
           title="Total Detections"
           value={overall_summary.total_entries}
           variant="success"
-          suffix="%"
         />
         <SummaryCard
           title="Patients Detected"
@@ -140,7 +139,7 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-lg font-semibold text-green-600">
-                      {day.total_detections} ({day.detection_rate}%)
+                      {day.total_detections}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -150,7 +149,7 @@ export default function SummaryView({ startDate, endDate, preset }: SummaryViewP
                         day.detection_rate >= 60 ? 'bg-orange-100 text-orange-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                      {day.total_undetected} ({day.undetected_rate}%)
+                      {day.total_undetected}
                       </div>
                     </div>
                   </td>

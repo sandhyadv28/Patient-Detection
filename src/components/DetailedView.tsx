@@ -69,7 +69,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
   const handleRetry = () => {
     dispatch(clearError());
-    
+
     if (preset && preset !== 'custom') {
       const { start, end } = getDatePresetRange(preset);
       const startDateStr = start.format('YYYY-MM-DD');
@@ -88,12 +88,12 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     setExpandedSlots(new Set());
 
     let selectedDate = '';
-    
+
     if (preset === 'custom' && startDate && endDate) {
       const start = moment(startDate);
       const end = moment(endDate);
       const daysDiff = end.diff(start, 'days') + 1;
-      
+
       if (dayIndex < daysDiff) {
         selectedDate = start.clone().add(dayIndex, 'days').format('YYYY-MM-DD');
       }
@@ -252,7 +252,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     const start = moment(startDate);
     const end = moment(endDate);
     const daysDiff = end.diff(start, 'days') + 1;
-    
+
     daysArr = [];
     for (let i = 0; i < daysDiff; i++) {
       const currentDate = start.clone().add(i, 'days').format('YYYY-MM-DD');
@@ -403,16 +403,16 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                       <p className="text-sm text-gray-600 mt-1">Total Detections</p>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-xl">
-                      <p className="text-2xl font-bold text-green-600">{slotInfo.detection_rate}%</p>
-                      <p className="text-sm text-green-600 mt-1">Detected ({slotInfo.total_detections})</p>
+                      <p className="text-2xl font-bold text-green-600"> {slotInfo.total_detections}</p>
+                      <p className="text-sm text-green-600 mt-1">Detected</p>
                     </div>
                     <div className="text-center p-4 bg-red-50 rounded-xl">
-                      <p className="text-2xl font-bold text-red-600">{slotInfo.undetected_rate}%</p>
-                      <p className="text-sm text-red-600 mt-1">Not Detected ({slotInfo.total_undetected})</p>
+                      <p className="text-2xl font-bold text-red-600">{slotInfo.total_undetected}</p>
+                      <p className="text-sm text-red-600 mt-1">Not Detected</p>
                     </div>
                     <div className="text-center p-4 bg-orange-50 rounded-xl">
-                      <p className="text-2xl font-bold text-orange-600">0%</p>
-                      <p className="text-sm text-orange-600 mt-1">Ambiguous (0)</p>
+                      <p className="text-2xl font-bold text-orange-600">0</p>
+                      <p className="text-sm text-orange-600 mt-1">Ambiguous</p>
                     </div>
                   </div>
                 </div>
