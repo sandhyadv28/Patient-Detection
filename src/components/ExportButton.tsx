@@ -1,30 +1,31 @@
-import React from 'react';
 import { Download } from 'lucide-react';
-import { SummaryData, DayData, ExportButtonProps } from './modals';
-import { exportToCSV } from '../utils/csvExport';
+import { DayData, SummaryData } from './modals';
+
+interface ExportButtonProps {
+  summaryData: SummaryData[];
+  dayData: DayData[];
+}
 
 export default function ExportButton({ summaryData, dayData }: ExportButtonProps) {
   const handleExport = () => {
-    // Debug logging to see what data is being exported
-    console.log('=== EXPORT BUTTON CLICKED ===');
-    console.log('Summary Data:', summaryData);
-    console.log('Day Data:', dayData);
-    console.log('Summary Data Length:', summaryData?.length || 0);
-    console.log('Day Data Length:', dayData?.length || 0);
-    
-    // Log first few items for detailed inspection
-    if (summaryData && summaryData.length > 0) {
-      console.log('First Summary Item:', summaryData[0]);
-    }
-    if (dayData && dayData.length > 0) {
-      console.log('First Day Item:', dayData[0]);
-      if (dayData[0].records && dayData[0].records.length > 0) {
-        console.log('First Record:', dayData[0].records[0]);
-      }
-    }
-    console.log('=== END EXPORT DEBUG ===');
-    
-    exportToCSV(summaryData, dayData);
+    const exportData = {
+      summary: summaryData,
+      detailed: dayData,
+      exportDate: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json'
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patient-detection-data-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (

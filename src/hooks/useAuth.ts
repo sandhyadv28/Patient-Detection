@@ -30,7 +30,6 @@ export function useAuth(): UseAuthReturn {
           checkAuthStatus();
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
         checkAuthStatus();
       } finally {
         setIsLoading(false);

@@ -5,27 +5,10 @@ import moment from 'moment-timezone';
 
 
 export function formatDate(dateString: string): string {
-  if (!dateString) {
-    return 'Invalid Date';
-  }
-  
   try {
-    // Try to parse the date string using moment for better format handling
-    const date = moment(dateString);
-    
-    if (!date.isValid()) {
-      // If moment can't parse it, try with native Date
-      const fallbackDate = new Date(dateString);
-      if (isNaN(fallbackDate.getTime())) {
-        // If both fail, return the original string
-        return dateString;
-      }
-      return fallbackDate.toLocaleDateString('en-US', DATE_FORMAT_OPTIONS.DISPLAY);
-    }
-    
-    return date.format('MMM DD, YYYY');
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
   } catch (error) {
-    console.warn('Date formatting warning:', error, 'Input:', dateString);
     return dateString;
   }
 }

@@ -81,7 +81,6 @@ export function validateCurrentToken(): boolean {
     
     return true;
   } catch (error) {
-    console.error('Token validation error:', error);
     return false;
   }
 } 

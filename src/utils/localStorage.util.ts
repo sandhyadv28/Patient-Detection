@@ -27,7 +27,6 @@ export function getCurrentUser(): any {
     const userData = localStorage.getItem("currentUser");
     return userData ? JSON.parse(userData) : null;
   } catch (error) {
-    console.error("Error retrieving current user data:", error);
     return null;
   }
 }
@@ -37,7 +36,7 @@ export function setCurrentUser(userData: string) {
     const decodedUserData = decodeURIComponent(userData);
     localStorage.setItem("currentUser", decodedUserData);
   } catch (error) {
-    console.error("Error storing current user data:", error);
+    // Silent fail for production
   }
 }
 

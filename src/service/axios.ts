@@ -101,68 +101,12 @@ import { redirectToLogin } from "../utils/utils";
     (error: AxiosError) => Promise.reject(error)
   );
   
-  // Simplified logging functions - only used in development mode
-  // These will be tree-shaken in production builds
-  const logAxiosErrorResponse = import.meta.env.DEV
-    ? (error: AxiosError) => {
-        try {
-          console.log(
-            `%c 🚨 ERROR RESPONSE `,
-            "background: red; color: white; font-weight: bold; padding: 4px; border-radius: 4px;"
-          );
-          console.log(
-            `%c ❌ ERROR: ${error.response?.data?.toString() || "Unknown Error"}`,
-            "color: #ff5252; font-weight: bold;"
-          );
-          console.log(
-            `%c 🔗 URL: %c ${error.response?.config?.url || "N/A"}`,
-            "color: gray; font-weight: bold;",
-            "color: #007BFF;"
-          );
-          console.log(
-            `%c 🔢 Status: %c ${error.response?.status || "N/A"}`,
-            "color: gray; font-weight: bold;",
-            "color: orange;"
-          );
-        } catch {
-          console.error("⚠️ Failed to log Axios error.");
-        }
-      }
-    : () => {}; // No-op in production
-  
-  const logAxiosResponse = import.meta.env.DEV
-    ? (response: AxiosResponse) => {
-        try {
-          console.log(
-            `%c ✅ SUCCESS `,
-            "background: green; color: white; font-weight: bold; padding: 4px; border-radius: 4px;"
-          );
-          console.log(
-            `%c 🔗 URL: %c ${response.config.url}`,
-            "color: gray; font-weight: bold;",
-            "color: #007BFF;"
-          );
-          console.log(
-            `%c 🔢 Status: %c ${response.status}`,
-            "color: gray; font-weight: bold;",
-            "color: green;"
-          );
-        } catch {
-          console.error("⚠️ Failed to log Axios response.");
-        }
-      }
-    : () => {}; // No-op in production
-  
   // Optimized response interceptor with auth error handling
   axiosInstance.interceptors.response.use(
     (response) => {
-      logAxiosResponse(response);
       return response;
     },
     async (error: AxiosError) => {
-      console.log("🚨 ERROR RESPONSE", error);
-      logAxiosErrorResponse(error);
-  
       const originalRequest = error.config;
   
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -187,7 +131,6 @@ import { redirectToLogin } from "../utils/utils";
             return axiosInstance(originalRequest);
           } catch (refreshError) {
             // If token refresh fails, redirect to login
-            console.error("Token refresh failed:", refreshError);
             redirectToLogin();
             return Promise.reject(refreshError);
           }
