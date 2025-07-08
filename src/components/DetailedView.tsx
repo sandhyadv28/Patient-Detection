@@ -43,13 +43,23 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
 
   // Fetch detailed data when component mounts or when summary data changes
   useEffect(() => {
-    if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > 0) {
-      const firstDayDate = summaryData.daily_breakdown[0].date;
-      dispatch(fetchDetailedData(firstDayDate));
+    // Generate days array to get the first day's date
+    let firstDayDate = moment().format('YYYY-MM-DD');
+
+    if (preset === 'previousMonth') {
+      const prevMonth = moment().subtract(1, 'month');
+      firstDayDate = prevMonth.clone().startOf('month').format('YYYY-MM-DD');
+    } else if (preset === 'custom' && startDate && endDate) {
+      firstDayDate = startDate;
+    } else if (preset === 'last30') {
+      firstDayDate = moment().subtract(29, 'days').format('YYYY-MM-DD');
     } else {
-      dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
+      // Default to last 7 days
+      firstDayDate = moment().subtract(6, 'days').format('YYYY-MM-DD');
     }
-  }, [dispatch, summaryData]);
+
+    dispatch(fetchDetailedData(firstDayDate));
+  }, [dispatch, preset, startDate, endDate]);
 
   // Handle preset changes and fetch summary data with date range
   useEffect(() => {
@@ -87,26 +97,9 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     dispatch(clearPerSlotDetailedData());
     setExpandedSlots(new Set());
 
-    let selectedDate = '';
-
-    if (preset === 'custom' && startDate && endDate) {
-      const start = moment(startDate);
-      const end = moment(endDate);
-      const daysDiff = end.diff(start, 'days') + 1;
-
-      if (dayIndex < daysDiff) {
-        selectedDate = start.clone().add(dayIndex, 'days').format('YYYY-MM-DD');
-      }
-    } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > dayIndex) {
-      selectedDate = summaryData.daily_breakdown[dayIndex].date;
-    }
-
-    if (selectedDate) {
+    if (daysArr && daysArr.length > dayIndex) {
+      const selectedDate = daysArr[dayIndex].date;
       dispatch(fetchDetailedData(selectedDate));
-    } else {
-      const numberOfDays = summaryData?.daily_breakdown?.length || 7;
-      const calculatedDate = moment().subtract(numberOfDays - 1 - dayIndex, 'days').format('YYYY-MM-DD');
-      dispatch(fetchDetailedData(calculatedDate));
     }
   };
 
@@ -119,24 +112,10 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
       setExpandedSlots(newExpanded);
 
       if (!perSlotDetailedData) {
-        let selectedDate = '';
-
-        if (preset === 'custom' && startDate && endDate) {
-          const start = moment(startDate);
-          const end = moment(endDate);
-          const daysDiff = end.diff(start, 'days') + 1;
-
-          if (activeDay < daysDiff) {
-            selectedDate = start.clone().add(activeDay, 'days').format('YYYY-MM-DD');
-          }
-        } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
-          selectedDate = summaryData.daily_breakdown[activeDay].date;
-        } else {
-          const numberOfDays = summaryData?.daily_breakdown?.length || 7;
-          selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
+        if (daysArr && daysArr.length > activeDay) {
+          const selectedDate = daysArr[activeDay].date;
+          dispatch(fetchPerSlotDetailedData({ date: selectedDate, slotKey: 'all_slots' }));
         }
-
-        dispatch(fetchPerSlotDetailedData({ date: selectedDate, slotKey: 'all_slots' }));
       }
     } else {
       newExpanded.delete(timeSlot);
@@ -173,15 +152,7 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     return <ErrorMessage message={error} onRetry={handleRetry} />;
   }
 
-  if (!detailedDayData) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <p className="text-gray-600 text-center">No detailed data available.</p>
-      </div>
-    );
-  }
-
-  if (!Array.isArray(detailedDayData) || detailedDayData.length === 0) {
+  if (!isLoading && (!detailedDayData || !Array.isArray(detailedDayData) || detailedDayData.length === 0)) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
         <p className="text-gray-600 text-center">No detailed data available.</p>
@@ -203,35 +174,14 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
   type SlotData = { label?: string; overall?: { total_entries?: number; total_detections?: number; total_undetected?: number; detection_rate?: number; undetected_rate?: number } };
   type DayObj = { [key: string]: SlotData };
 
-  const numberOfDays = summaryData?.daily_breakdown?.length || 7;
+  let daysArr: any[] = [];
 
-  if (activeDay >= numberOfDays) {
-    setActiveDay(0);
-  }
-
-  const days: DayObj[] = summaryData?.daily_breakdown?.map((day, index) => {
-    return {} as DayObj;
-  }) || [];
-
-  const selectedDayObj: DayObj = Object.assign({}, ...(detailedDayData || []));
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Yes': return 'bg-green-100 text-green-800';
-      case 'No': return 'bg-red-100 text-red-800';
-      case 'Ambiguous': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  let daysArr = summaryData?.daily_breakdown?.slice().reverse() || [];
-
+  // Generate days array based on preset
   if (preset === 'previousMonth') {
     const prevMonth = moment().subtract(1, 'month');
     const startOfPrevMonth = prevMonth.clone().startOf('month');
     const endOfPrevMonth = prevMonth.clone().endOf('month');
     const daysInPrevMonth = endOfPrevMonth.date();
-    daysArr = [];
     for (let i = daysInPrevMonth; i >= 1; i--) {
       const date = startOfPrevMonth.clone().date(i).format('YYYY-MM-DD');
       const backendDay = summaryData?.daily_breakdown?.find(d => d.date === date);
@@ -253,7 +203,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
     const end = moment(endDate);
     const daysDiff = end.diff(start, 'days') + 1;
 
-    daysArr = [];
     for (let i = 0; i < daysDiff; i++) {
       const currentDate = start.clone().add(i, 'days').format('YYYY-MM-DD');
       const backendDay = summaryData?.daily_breakdown?.find(d => d.date === currentDate);
@@ -270,31 +219,65 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
         }
       );
     }
-  } else {
-    if (preset === 'custom') {
-      daysArr = summaryData?.daily_breakdown?.slice().reverse() || [];
-    } else {
-      const expectedDays = preset === 'last30' ? 30 : 7;
-      if (daysArr.length !== expectedDays) {
-        const missing = expectedDays - daysArr.length;
-        let oldestDate = daysArr.length > 0 ? daysArr[daysArr.length - 1].date : moment().format('YYYY-MM-DD');
-        for (let i = 1; i <= Math.abs(missing); i++) {
-          const padDate = moment(oldestDate).subtract(i, 'days').format('YYYY-MM-DD');
-          daysArr.push({ date: padDate } as any);
+  } else if (preset === 'last30') {
+    // Generate 30 days from today backwards
+    for (let i = 29; i >= 0; i--) {
+      const date = moment().subtract(i, 'days').format('YYYY-MM-DD');
+      const backendDay = summaryData?.daily_breakdown?.find(d => d.date === date);
+      daysArr.push(
+        backendDay || {
+          date,
+          hospital: '',
+          hospital_unit: '',
+          total_entries: 0,
+          total_detections: 0,
+          total_undetected: 0,
+          detection_rate: 0,
+          undetected_rate: 0,
         }
-        daysArr = daysArr.sort((a, b) => moment(b.date).diff(moment(a.date))).slice(0, expectedDays);
-      }
+      );
+    }
+  } else {
+    // Default to last 7 days (last7 preset)
+    for (let i = 6; i >= 0; i--) {
+      const date = moment().subtract(i, 'days').format('YYYY-MM-DD');
+      const backendDay = summaryData?.daily_breakdown?.find(d => d.date === date);
+      daysArr.push(
+        backendDay || {
+          date,
+          hospital: '',
+          hospital_unit: '',
+          total_entries: 0,
+          total_detections: 0,
+          total_undetected: 0,
+          detection_rate: 0,
+          undetected_rate: 0,
+        }
+      );
     }
   }
 
+  // Fix activeDay if it's out of bounds for the current daysArr
+  if (activeDay >= daysArr.length) {
+    setActiveDay(0);
+  }
+
+  const selectedDayObj: DayObj = Object.assign({}, ...(detailedDayData || []));
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Yes': return 'bg-green-100 text-green-800';
+      case 'No': return 'bg-red-100 text-red-800';
+      case 'Ambiguous': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   let selectedDate = '';
-  if (preset === 'custom' && daysArr && daysArr.length > activeDay) {
+  if (daysArr && daysArr.length > activeDay) {
     selectedDate = daysArr[activeDay].date;
-  } else if (summaryData?.daily_breakdown && summaryData.daily_breakdown.length > activeDay) {
-    selectedDate = summaryData.daily_breakdown[activeDay].date;
   } else {
-    const numberOfDays = summaryData?.daily_breakdown?.length || 7;
-    selectedDate = moment().subtract(numberOfDays - 1 - activeDay, 'days').format('YYYY-MM-DD');
+    selectedDate = moment().format('YYYY-MM-DD');
   }
 
   return (
@@ -325,11 +308,6 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
             </button>
           ))}
         </div>
-        {preset === 'custom' && daysArr.length > 0 && (
-          <div className="mb-2 text-sm text-gray-700">
-            Date Range: {formatDate(daysArr[0].date)} to {formatDate(daysArr[daysArr.length - 1].date)} ({daysArr.length} days)
-          </div>
-        )}
 
         <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
           <p className="text-blue-800 font-medium">
@@ -338,17 +316,14 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
         </div>
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-          <LoadingSpinner size="lg" message="Loading detailed data..." />
-        </div>
-      )}
-
       {/* Time Slot Details */}
-      {!isLoading && (
-        <div className="space-y-4">
-          {slotKeys.map((slotKey, idx) => {
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <LoadingSpinner size="lg" message="Loading detailed data..." />
+          </div>
+        ) : (
+          slotKeys.map((slotKey, idx) => {
             const slotData = selectedDayObj[slotKey];
             const { label, overall } = slotData || {};
             const slotInfo = {
@@ -513,9 +488,9 @@ export default function DetailedView({ preset, startDate, endDate }: DetailedVie
                 )}
               </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
 
       {/* Photo Modal */}
       {photoModal && (

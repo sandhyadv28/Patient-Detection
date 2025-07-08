@@ -10,10 +10,17 @@ import SummaryView from './components/SummaryView';
 import { useAuth } from './hooks/useAuth';
 import { usePatientData } from './hooks/usePatientData';
 import { useStorageListener } from './hooks/useStorageListener';
+import { useAppDispatch, useAppSelector } from './store/hook';
+import { fetchDetailedData } from './store/slice/patientSlice';
+import { RootState } from './store/store';
+import moment from 'moment';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('summary');
   const { user, showAuthModal, handleLogin, handleLogout, setShowAuthModal, isLoading } = useAuth();
+  const dispatch = useAppDispatch();
+  const { detailedDayData, summaryData: rawSummaryData } = useAppSelector((state: RootState) => state.patient);
+  
   const {
     dayData,
     summaryData,
@@ -25,6 +32,20 @@ function App() {
   } = usePatientData();
 
   useStorageListener();
+
+  const handleViewChange = (view: ViewType) => {
+    setCurrentView(view);
+    
+    // If switching to detailed view and we don't have detailed data, fetch it
+    if (view === 'detailed' && !detailedDayData) {
+      if (rawSummaryData?.daily_breakdown && rawSummaryData.daily_breakdown.length > 0) {
+        const firstDayDate = rawSummaryData.daily_breakdown[0].date;
+        dispatch(fetchDetailedData(firstDayDate));
+      } else {
+        dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -71,7 +92,7 @@ function App() {
         {/* View Toggle */}
         <ViewToggle
           currentView={currentView}
-          onViewChange={setCurrentView}
+          onViewChange={handleViewChange}
         />
 
         {/* Main Content */}
