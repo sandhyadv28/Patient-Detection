@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DateRangePicker from './components/DateRangePicker';
 import DetailedView from './components/DetailedView';
 import ViewToggle from './components/Layout/AnalysisTabs';
@@ -11,19 +11,21 @@ import { useAuth } from './hooks/useAuth';
 import { usePatientData } from './hooks/usePatientData';
 import { useStorageListener } from './hooks/useStorageListener';
 import { useAppDispatch, useAppSelector } from './store/hook';
-import { fetchDetailedData } from './store/slice/patientSlice';
-import { RootState } from './store/store';
+import { fetchDetailedData, fetchPatientSummary, fetchPerSlotDetailedData } from './store/slice/patientSlice';
+import { getDatePresetRange } from './utils/dataGenerator';
 import moment from 'moment';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('summary');
   const { user, showAuthModal, handleLogin, handleLogout, setShowAuthModal, isLoading } = useAuth();
   const dispatch = useAppDispatch();
-  const { detailedDayData, summaryData: rawSummaryData } = useAppSelector((state: RootState) => state.patient);
+  
+  // Get current data from Redux to check if we need to fetch
+  const { summaryData, detailedDayData, perSlotDetailedData } = useAppSelector((state) => state.patient);
   
   const {
     dayData,
-    summaryData,
+    summaryData: convertedSummaryData,
     startDate,
     endDate,
     preset,
@@ -33,16 +35,67 @@ function App() {
 
   useStorageListener();
 
+  // Call summary API only when preset changes and we don't have summary data
+  useEffect(() => {
+    if (!user) return; // Don't call APIs if user is not authenticated
+
+    let summaryStartDate: string;
+    let summaryEndDate: string;
+
+    // Determine dates based on preset
+    if (preset && preset !== 'custom') {
+      const { start, end } = getDatePresetRange(preset);
+      summaryStartDate = start.format('YYYY-MM-DD');
+      summaryEndDate = end.format('YYYY-MM-DD');
+    } else if (preset === 'custom' && startDate && endDate) {
+      summaryStartDate = startDate;
+      summaryEndDate = endDate;
+    } else {
+      // Default to last 7 days
+      const { start, end } = getDatePresetRange('last7');
+      summaryStartDate = start.format('YYYY-MM-DD');
+      summaryEndDate = end.format('YYYY-MM-DD');
+    }
+
+    // Only call summary API if we don't have summary data or if preset changed
+    if (!summaryData) {
+      dispatch(fetchPatientSummary({ 
+        startDate: summaryStartDate, 
+        endDate: summaryEndDate 
+      }));
+    }
+
+  }, [dispatch, user, preset, startDate, endDate, summaryData]);
+
+  // Lazy load detailed data only when switching to detailed view
   const handleViewChange = (view: ViewType) => {
     setCurrentView(view);
     
-    // If switching to detailed view and we don't have detailed data, fetch it
+    // Only fetch detailed data if switching to detailed view and we don't have it
     if (view === 'detailed' && !detailedDayData) {
-      if (rawSummaryData?.daily_breakdown && rawSummaryData.daily_breakdown.length > 0) {
-        const firstDayDate = rawSummaryData.daily_breakdown[0].date;
-        dispatch(fetchDetailedData(firstDayDate));
+      let detailedDate: string;
+
+      // Determine the date for detailed data
+      if (preset && preset !== 'custom') {
+        const { start } = getDatePresetRange(preset);
+        detailedDate = start.format('YYYY-MM-DD');
+      } else if (preset === 'custom' && startDate && endDate) {
+        detailedDate = startDate;
       } else {
-        dispatch(fetchDetailedData(moment().format('YYYY-MM-DD')));
+        // Default to last 7 days
+        const { start } = getDatePresetRange('last7');
+        detailedDate = start.format('YYYY-MM-DD');
+      }
+
+      // Call detailed APIs only if we don't have the data
+      dispatch(fetchDetailedData(detailedDate));
+      
+      // Only call per-slot API if we don't have that data either
+      if (!perSlotDetailedData) {
+        dispatch(fetchPerSlotDetailedData({ 
+          date: detailedDate, 
+          slotKey: 'all_slots' 
+        }));
       }
     }
   };
@@ -72,7 +125,7 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <Header
         user={user}
-        summaryData={summaryData}
+        summaryData={convertedSummaryData}
         dayData={dayData}
         onLogout={handleLogout}
       />
