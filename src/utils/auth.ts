@@ -1,4 +1,4 @@
-import { getToken, setToken, removeToken, setRefreshToken, removeRefreshToken, setCurrentUser, removeCurrentUser } from './localStorage.util';
+import { getCurrentUser, getToken, removeCurrentUser, removeRefreshToken, removeToken, setCurrentUser, setRefreshToken, setToken } from './localStorage.util';
 import { redirectToLogin } from './utils';
 
 export function handleLogout() {
@@ -55,4 +55,33 @@ export function checkAuthStatus() {
     return false;
   }
   return true;
+}
+
+export function validateCurrentToken(): boolean {
+  const token = getToken();
+  const currentUser = getCurrentUser();
+  
+  if (!token || !currentUser) {
+    return false;
+  }
+  
+  try {
+    const tokenParts = token.split('.');
+    if (tokenParts.length === 3) {
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      if (payload.exp && payload.exp < currentTime) {
+        removeToken();
+        removeRefreshToken();
+        removeCurrentUser();
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
 } 

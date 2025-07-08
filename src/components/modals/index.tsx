@@ -150,6 +150,7 @@ export interface UseAuthReturn {
   handleLogin: (userData: User) => void;
   handleLogout: () => void;
   setShowAuthModal: (show: boolean) => void;
+  isLoading: boolean;
 }
 
 // ============================================================================
